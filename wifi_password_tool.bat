@@ -16,31 +16,107 @@ if %errorLevel% neq 0 (
 cls
 
 :main
+REM 清除之前的WiFi数组变量，避免重复污染
+for /f "tokens=1 delims==" %%v in ('set wifi_name_ 2^>nul') do set "%%v="
+
 echo.
 echo ============================================
 echo            WiFi密码查询工具
 echo ============================================
-netsh wlan show profiles
+
+REM 解析并显示带序号的WiFi配置文件列表
+set "wifi_count=0"
+for /f "tokens=1,2 delims=:" %%a in ('netsh wlan show profiles 2^>nul') do (
+    set "header=%%a"
+    set "header=!header: =!"
+    if "!header!"=="AllUserProfile" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+    if "!header!"=="CurrentUserProfile" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+    if "!header!"=="所有用户配置文件" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+    if "!header!"=="当前用户配置" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+)
+
+echo.
+echo 接口 WLAN 上的配置文件:
+echo.
+echo 组策略配置文件(只读)
+echo ---------------------------------
+echo     ^<无^>
+echo.
+echo 用户配置文件
+echo -------------
+if !wifi_count! equ 0 (
+    echo     ^<无^>
+) else (
+    for /l %%i in (1,1,!wifi_count!) do (
+        set "idx=%%i"
+        if !idx! lss 10 (
+            echo     !idx!. 所有用户配置文件 : !wifi_name_%%i!
+        ) else if !idx! lss 100 (
+            echo    !idx!. 所有用户配置文件 : !wifi_name_%%i!
+        ) else (
+            echo   !idx!. 所有用户配置文件 : !wifi_name_%%i!
+        )
+    )
+)
 
 echo.
 echo.
+set "input="
+set /p "input=请输入序号或WiFi名称查询密码（输入q退出程序）："
+
+if /i "!input!"=="q" goto exit
+
 set "wifi_name="
-set /p "wifi_name=请输入要查询密码的WiFi名称（输入q退出程序）："
-if "%wifi_name%"=="" (
+REM 判断是否为数字序号
+set "is_number=0"
+for /f "delims=0123456789" %%d in ("!input!") do set "is_number=1"
+if "!is_number!"=="0" if not "!input!"=="" (
+    if !input! geq 1 if !input! leq !wifi_count! (
+        for /l %%i in (!input!,1,!input!) do set "wifi_name=!wifi_name_%%i!"
+    )
+)
+
+REM 如果没有通过序号选择，则直接使用输入作为WiFi名称
+if "!wifi_name!"=="" (
+    set "wifi_name=!input!"
+)
+
+if "!wifi_name!"=="" (
     echo.
     echo 错误：没有输入WiFi名称！
     set "wifi_name="
+    set "input="
     timeout /t 3 >nul
     goto main
 )
-if "%wifi_name%"==" " (
+if "!wifi_name!"==" " (
     echo.
     echo 错误：没有输入WiFi名称！
     set "wifi_name="
+    set "input="
     timeout /t 3 >nul
     goto main
 )
-if /i "%wifi_name%"=="q" goto exit
 
 REM 检查WiFi配置文件是否存在
 netsh wlan show profile name="%wifi_name%" >nul 2>&1

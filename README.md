@@ -29,7 +29,9 @@
 
 ## 功能特点 / Features
 
-- 🔍 查看所有已保存的WiFi配置 / View all saved WiFi configurations
+- 🔍 查看所有已保存的WiFi配置（带序号）/ View all saved WiFi configurations (with index numbers)
+- 🔢 支持按序号快速选择WiFi / Support quick WiFi selection by index
+- ⌨️ 支持直接输入WiFi名称 / Support direct WiFi name input
 - 🔑 查询指定WiFi的密码 / Query password for specified WiFi
 - 📋 自动复制密码到剪贴板 / Auto-copy password to clipboard
 - 🌐 支持中文和英文界面 / Support Chinese and English interfaces
@@ -44,8 +46,8 @@
 ## 使用步骤 / Usage Steps
 
 1. **以管理员身份运行脚本** / **Run script as administrator**
-2. **查看WiFi列表** / **View WiFi list**
-3. **输入要查询的WiFi名称** / **Enter WiFi name to query**
+2. **查看WiFi列表（带序号）** / **View WiFi list (with index numbers)**
+3. **输入序号快速选择，或输入WiFi名称** / **Enter index for quick select, or enter WiFi name**
 4. **查看密码结果** / **View password result**
 5. **选择继续或退出** / **Choose to continue or exit**
 
@@ -54,7 +56,7 @@
 | 问题 / Issue | 解决方案 / Solution |
 |-------------|-------------------|
 | 权限不足 / Insufficient privileges | 以管理员身份运行 / Run as administrator |
-| 找不到WiFi / WiFi not found | 检查WiFi名称是否正确 / Check if WiFi name is correct |
+| 找不到WiFi / WiFi not found | 检查序号是否在范围内，或WiFi名称是否正确 / Check if index is in range, or WiFi name is correct |
 | 密码为空 / Password is empty | 该WiFi可能没有保存密码 / WiFi may not have saved password |
 
 ## 技术支持 / Technical Support

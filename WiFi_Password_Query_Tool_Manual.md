@@ -6,7 +6,9 @@ The WiFi Password Query Tool is a Windows batch-based utility that helps users q
 
 ## Features
 
-- ✅ Display all saved WiFi configurations
+- ✅ Display all saved WiFi configurations (with index numbers)
+- ✅ Support quick selection by index, no need to manually enter WiFi name
+- ✅ Support direct WiFi name input for query
 - ✅ Query passwords for specified WiFi networks
 - ✅ Automatically copy passwords to clipboard
 - ✅ Support for both Chinese and English Windows systems
@@ -51,12 +53,32 @@ Download the following files to your desktop:
 
 ### Step 1: Launch the Tool
 After running the script as administrator, the tool will display:
-- All saved WiFi configurations in the current system
-- Input prompt: `Enter WiFi name to query password (enter q to exit): `
+- All saved WiFi configurations in the current system (with index numbers)
+- Input prompt: `Enter index or WiFi name to query password (enter q to exit): `
 
-### Step 2: Enter WiFi Name
-- Find the WiFi network name you want to query from the list
+WiFi list display example:
+```
+User profiles
+-------------
+    1. All User Profile     : CMCC-NPxe-5G
+    2. All User Profile     : HomeinnSelected
+    3. All User Profile     : Redmi 8A
+    4. All User Profile     : JinJiangRewards
+   ...
+   18. All User Profile     : TPGuest_3006
+```
+
+### Step 2: Select WiFi
+There are two ways to select the WiFi to query:
+
+**Method 1: Enter index (Recommended)**
+- Find the WiFi you want to query in the list
+- Simply enter its corresponding index number, e.g., enter `3` to select the 3rd WiFi
+
+**Method 2: Enter WiFi name**
 - Enter the complete WiFi name (case-sensitive)
+
+Other operations:
 - Enter `q` to exit the program
 - Pressing Enter directly will prompt "No WiFi name entered"
 
@@ -64,7 +86,7 @@ After running the script as administrator, the tool will display:
 The tool will display:
 ```
 ============================================
-WiFi Name: [Your entered WiFi name]
+WiFi Name: [Your selected WiFi name]
 WiFi Password: [Actual password]
 ============================================
 [Password copied to clipboard]
@@ -82,7 +104,8 @@ A: WiFi password information is stored in the system's secure area, and only adm
 
 ### Q2: What should I do if it says "WiFi profile not found"?
 A: Please check:
-- Whether the WiFi name is entered correctly (case-sensitive)
+- If using index selection, ensure the index is within the valid range
+- If entering WiFi name, verify it is correct (case-sensitive)
 - Whether the WiFi has been connected before and the password was saved
 - Whether it appears in the WiFi configuration list
 
@@ -110,8 +133,8 @@ A: The tool is secure:
 | Error Message | Cause | Solution |
 |---------------|-------|----------|
 | Please run this script as Administrator! | Insufficient privileges | Right-click and select "Run as administrator" |
-| Error: No WiFi name entered! | Empty input | Enter a valid WiFi name or enter q to exit |
-| Error: WiFi profile "xxx" not found! | Incorrect or non-existent WiFi name | Check if the WiFi name is correct |
+| Error: No WiFi name entered! | Empty input | Enter a valid index or WiFi name, or enter q to exit |
+| Error: WiFi profile "xxx" not found! | Incorrect/non-existent WiFi name or invalid index | Check if the index is in range, or if the WiFi name is correct |
 | Error: Unable to retrieve password information | Password retrieval failed | The WiFi may not have a saved password |
 
 ## Technical Support
@@ -125,10 +148,12 @@ If you encounter problems during use:
 
 ## Version Information
 
-- Version: v1.0
-- Update Date: 2025
+- Version: v2.0
+- Update Date: September 2026
 - Compatibility: Windows 7/8/10/11
 - Language Support: Chinese/English
+- Update Content:
+  - v2.0: Added index numbers to WiFi list, supported quick selection by index; compatible with both Chinese and English system output formats
 
 ## Disclaimer
 

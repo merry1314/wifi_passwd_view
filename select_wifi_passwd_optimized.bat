@@ -16,31 +16,107 @@ if %errorLevel% neq 0 (
 cls
 
 :main
+REM Clear previous WiFi array variables to avoid pollution
+for /f "tokens=1 delims==" %%v in ('set wifi_name_ 2^>nul') do set "%%v="
+
 echo.
 echo ============================================
 echo            WiFi Password Query Tool
 echo ============================================
-netsh wlan show profiles
+
+REM Parse and display WiFi profile list with index numbers
+set "wifi_count=0"
+for /f "tokens=1,2 delims=:" %%a in ('netsh wlan show profiles 2^>nul') do (
+    set "header=%%a"
+    set "header=!header: =!"
+    if "!header!"=="AllUserProfile" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+    if "!header!"=="CurrentUserProfile" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+    if "!header!"=="所有用户配置文件" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+    if "!header!"=="当前用户配置" (
+        set /a wifi_count+=1
+        set "name=%%b"
+        set "name=!name:~1!"
+        set "wifi_name_!wifi_count!=!name!"
+    )
+)
+
+echo.
+echo Profiles on interface WLAN:
+echo.
+echo Group policy profiles (read only)
+echo ---------------------------------
+echo     ^<None^>
+echo.
+echo User profiles
+echo -------------
+if !wifi_count! equ 0 (
+    echo     ^<None^>
+) else (
+    for /l %%i in (1,1,!wifi_count!) do (
+        set "idx=%%i"
+        if !idx! lss 10 (
+            echo     !idx!. All User Profile     : !wifi_name_%%i!
+        ) else if !idx! lss 100 (
+            echo    !idx!. All User Profile     : !wifi_name_%%i!
+        ) else (
+            echo   !idx!. All User Profile     : !wifi_name_%%i!
+        )
+    )
+)
 
 echo.
 echo.
+set "input="
+set /p "input=Enter index or WiFi name to query password (enter q to exit): "
+
+if /i "!input!"=="q" goto exit
+
 set "wifi_name="
-set /p "wifi_name=Enter WiFi name to query password (enter q to exit): "
-if "%wifi_name%"=="" (
+REM Check if input is a numeric index
+set "is_number=0"
+for /f "delims=0123456789" %%d in ("!input!") do set "is_number=1"
+if "!is_number!"=="0" if not "!input!"=="" (
+    if !input! geq 1 if !input! leq !wifi_count! (
+        for /l %%i in (!input!,1,!input!) do set "wifi_name=!wifi_name_%%i!"
+    )
+)
+
+REM If not selected by index, use input directly as WiFi name
+if "!wifi_name!"=="" (
+    set "wifi_name=!input!"
+)
+
+if "!wifi_name!"=="" (
     echo.
     echo Error: No WiFi name entered!
     set "wifi_name="
+    set "input="
     timeout /t 3 >nul
     goto main
 )
-if "%wifi_name%"==" " (
+if "!wifi_name!"==" " (
     echo.
     echo Error: No WiFi name entered!
     set "wifi_name="
+    set "input="
     timeout /t 3 >nul
     goto main
 )
-if /i "%wifi_name%"=="q" goto exit
 
 REM Check if WiFi profile exists
 netsh wlan show profile name="%wifi_name%" >nul 2>&1
