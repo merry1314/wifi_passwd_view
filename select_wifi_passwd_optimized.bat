@@ -82,9 +82,10 @@ if !wifi_count! equ 0 (
 echo.
 echo.
 set "input="
-set /p "input=Enter index or WiFi name to query password (enter q to exit): "
+set /p "input=Enter index/WiFi name to query (e=export all, q=exit): "
 
 if /i "!input!"=="q" goto exit
+if /i "!input!"=="e" goto export_all
 
 set "wifi_name="
 REM Check if input is a numeric index
@@ -171,11 +172,100 @@ goto main
 echo.
 echo ============================================
 echo 1. Query another WiFi
-echo 2. Exit program
+echo 2. Export all WiFi passwords to TXT
+echo 3. Exit program
 echo ============================================
-choice /c 12 /m "Please select an option"
-if errorlevel 2 goto exit
+choice /c 123 /m "Please select an option"
+if errorlevel 3 goto exit
+if errorlevel 2 goto export_all
 if errorlevel 1 goto main
+
+:export_all
+echo.
+echo ============================================
+echo     Batch Export WiFi Passwords (TXT)
+echo ============================================
+if !wifi_count! equ 0 (
+    echo.
+    echo Error: No WiFi configurations available to export!
+    timeout /t 3 >nul
+    goto main
+)
+
+REM Generate timestamped filename
+set "datestamp=%date:~0,4%-%date:~5,2%-%date:~8,2%"
+set "timestamp=%time:~0,2%-%time:~3,2%-%time:~6,2%"
+set "timestamp=!timestamp: =0!"
+set "outfile=%~dp0WiFi_Passwords_Export_!datestamp!_!timestamp!.txt"
+
+echo.
+echo Output file: !outfile!
+echo Processing !wifi_count! WiFi profiles...
+echo.
+
+REM Write file header
+echo ============================================================ > "!outfile!"
+echo              WiFi Password Batch Export Report              >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+echo.  >> "!outfile!"
+echo Export Time: %date% %time% >> "!outfile!"
+echo Tool Version: WiFi Password Query Tool v2.1 >> "!outfile!"
+echo Total WiFi Count: !wifi_count! >> "!outfile!"
+echo.  >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+echo No.   WiFi Name                             WiFi Password   >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+
+set "exported_ok=0"
+set "exported_none=0"
+for /l %%n in (1,1,!wifi_count!) do (
+    set "cur_name=!wifi_name_%%n!"
+    set "cur_pwd="
+    for /f "tokens=*" %%k in ('netsh wlan show profile name^="!cur_name!" key^=clear 2^>nul') do (
+        set "line=%%k"
+        echo !line! | findstr /C:"Key Content" /C:"关键内容" >nul
+        if not errorlevel 1 (
+            for /f "tokens=2 delims=:" %%p in ("!line!") do (
+                set "cur_pwd=%%p"
+                set "cur_pwd=!cur_pwd: =!"
+            )
+        )
+    )
+
+    REM Right-align index + left-padded WiFi name
+    set "idx_str=%%n"
+    if %%n lss 10 set "idx_str= %%n"
+    if %%n lss 100 if %%n geq 10 set "idx_str=%%n"
+
+    set "name_pad=!cur_name!                                                    "
+    set "name_pad=!name_pad:~0,36!"
+
+    if "!cur_pwd!"=="" (
+        set /a exported_none+=1
+        echo !idx_str!.  !name_pad! ^<No password or open network^> >> "!outfile!"
+        echo [%%n/!wifi_count!] !cur_name!  -^>  ^<No password or open network^>
+    ) else (
+        set /a exported_ok+=1
+        echo !idx_str!.  !name_pad! !cur_pwd! >> "!outfile!"
+        echo [%%n/!wifi_count!] !cur_name!  -^>  !cur_pwd!
+    )
+)
+
+echo. >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+echo Export Stats: Success !exported_ok! / No Password !exported_none! / Total !wifi_count! >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+
+echo.
+echo ============================================
+echo Export complete!
+echo   File location: !outfile!
+echo   Success      : !exported_ok!
+echo   No password  : !exported_none!
+echo ============================================
+echo.
+pause
+goto main
 
 :exit
 echo.

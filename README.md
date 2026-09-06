@@ -33,6 +33,7 @@
 - 🔢 支持按序号快速选择WiFi / Support quick WiFi selection by index
 - ⌨️ 支持直接输入WiFi名称 / Support direct WiFi name input
 - 🔑 查询指定WiFi的密码 / Query password for specified WiFi
+- 📤 一键批量导出所有WiFi密码为TXT / One-click batch export all WiFi passwords to TXT
 - 📋 自动复制密码到剪贴板 / Auto-copy password to clipboard
 - 🌐 支持中文和英文界面 / Support Chinese and English interfaces
 - 🛡️ 安全的本地运行 / Secure local execution
@@ -47,9 +48,9 @@
 
 1. **以管理员身份运行脚本** / **Run script as administrator**
 2. **查看WiFi列表（带序号）** / **View WiFi list (with index numbers)**
-3. **输入序号快速选择，或输入WiFi名称** / **Enter index for quick select, or enter WiFi name**
-4. **查看密码结果** / **View password result**
-5. **选择继续或退出** / **Choose to continue or exit**
+3. **输入序号/名称查询，或输入e批量导出为TXT** / **Enter index/name to query, or enter e for batch TXT export**
+4. **查看密码结果或导出文件** / **View password result or export file**
+5. **选择继续、导出或退出** / **Choose to continue, export or exit**
 
 ## 常见问题 / Common Issues
 

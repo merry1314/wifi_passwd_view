@@ -82,9 +82,10 @@ if !wifi_count! equ 0 (
 echo.
 echo.
 set "input="
-set /p "input=请输入序号或WiFi名称查询密码（输入q退出程序）："
+set /p "input=请输入序号或WiFi名称查询密码（e导出所有，q退出程序）："
 
 if /i "!input!"=="q" goto exit
+if /i "!input!"=="e" goto export_all
 
 set "wifi_name="
 REM 判断是否为数字序号
@@ -171,11 +172,100 @@ goto main
 echo.
 echo ============================================
 echo 1. 继续查询其他WiFi
-echo 2. 退出程序
+echo 2. 导出所有WiFi密码到TXT
+echo 3. 退出程序
 echo ============================================
-choice /c 12 /m "请选择操作"
-if errorlevel 2 goto exit
+choice /c 123 /m "请选择操作"
+if errorlevel 3 goto exit
+if errorlevel 2 goto export_all
 if errorlevel 1 goto main
+
+:export_all
+echo.
+echo ============================================
+echo        批量导出WiFi密码（TXT格式）
+echo ============================================
+if !wifi_count! equ 0 (
+    echo.
+    echo 错误：当前没有可导出的WiFi配置！
+    timeout /t 3 >nul
+    goto main
+)
+
+REM 生成带日期时间戳的文件名
+set "datestamp=%date:~0,4%-%date:~5,2%-%date:~8,2%"
+set "timestamp=%time:~0,2%-%time:~3,2%-%time:~6,2%"
+set "timestamp=!timestamp: =0!"
+set "outfile=%~dp0WiFi密码导出_!datestamp!_!timestamp!.txt"
+
+echo.
+echo 导出文件路径: !outfile!
+echo 正在处理 共 !wifi_count! 个WiFi配置...
+echo.
+
+REM 写入文件头
+echo ============================================================ > "!outfile!"
+echo               WiFi密码批量导出报告                          >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+echo.  >> "!outfile!"
+echo 导出时间: %date% %time% >> "!outfile!"
+echo 导出工具: WiFi密码查询工具 v2.1 >> "!outfile!"
+echo WiFi总数: !wifi_count! >> "!outfile!"
+echo.  >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+echo 序号   WiFi名称                              WiFi密码       >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+
+set "exported_ok=0"
+set "exported_none=0"
+for /l %%n in (1,1,!wifi_count!) do (
+    set "cur_name=!wifi_name_%%n!"
+    set "cur_pwd="
+    for /f "tokens=*" %%k in ('netsh wlan show profile name^="!cur_name!" key^=clear 2^>nul') do (
+        set "line=%%k"
+        echo !line! | findstr /C:"Key Content" /C:"关键内容" >nul
+        if not errorlevel 1 (
+            for /f "tokens=2 delims=:" %%p in ("!line!") do (
+                set "cur_pwd=%%p"
+                set "cur_pwd=!cur_pwd: =!"
+            )
+        )
+    )
+
+    REM 序号右对齐 + WiFi名与密码左对齐填充
+    set "idx_str=%%n"
+    if %%n lss 10 set "idx_str= %%n"
+    if %%n lss 100 if %%n geq 10 set "idx_str=%%n"
+
+    set "name_pad=!cur_name!                                                    "
+    set "name_pad=!name_pad:~0,36!"
+
+    if "!cur_pwd!"=="" (
+        set /a exported_none+=1
+        echo !idx_str!.  !name_pad! ^<无密码或开放网络^> >> "!outfile!"
+        echo [%%n/!wifi_count!] !cur_name!  -^>  ^<无密码或开放网络^>
+    ) else (
+        set /a exported_ok+=1
+        echo !idx_str!.  !name_pad! !cur_pwd! >> "!outfile!"
+        echo [%%n/!wifi_count!] !cur_name!  -^>  !cur_pwd!
+    )
+)
+
+echo. >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+echo 导出统计: 成功 !exported_ok! 个 / 无密码 !exported_none! 个 / 总计 !wifi_count! 个 >> "!outfile!"
+echo ============================================================ >> "!outfile!"
+
+echo.
+echo ============================================
+echo 导出完成！
+echo   文件位置: !outfile!
+echo   成功导出: !exported_ok! 个
+echo   无密码  : !exported_none! 个
+echo ============================================
+echo.
+pause
+goto main
 
 :exit
 echo.

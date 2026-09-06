@@ -10,6 +10,7 @@ The WiFi Password Query Tool is a Windows batch-based utility that helps users q
 - ✅ Support quick selection by index, no need to manually enter WiFi name
 - ✅ Support direct WiFi name input for query
 - ✅ Query passwords for specified WiFi networks
+- ✅ One-click batch export all WiFi passwords to TXT file
 - ✅ Automatically copy passwords to clipboard
 - ✅ Support for both Chinese and English Windows systems
 - ✅ User-friendly interface with error prompts
@@ -54,7 +55,7 @@ Download the following files to your desktop:
 ### Step 1: Launch the Tool
 After running the script as administrator, the tool will display:
 - All saved WiFi configurations in the current system (with index numbers)
-- Input prompt: `Enter index or WiFi name to query password (enter q to exit): `
+- Input prompt: `Enter index/WiFi name to query (e=export all, q=exit): `
 
 WiFi list display example:
 ```
@@ -79,6 +80,7 @@ There are two ways to select the WiFi to query:
 - Enter the complete WiFi name (case-sensitive)
 
 Other operations:
+- Enter `e` to one-click batch export all WiFi passwords to TXT file
 - Enter `q` to exit the program
 - Pressing Enter directly will prompt "No WiFi name entered"
 
@@ -92,10 +94,55 @@ WiFi Password: [Actual password]
 [Password copied to clipboard]
 ```
 
+### Step 3B: Batch Export All WiFi Passwords (Optional)
+Enter `e` at the main prompt, or select menu option `2` after a query:
+
+```
+============================================
+    Batch Export WiFi Passwords (TXT)
+============================================
+
+Output file: D:\xxx\WiFi_Passwords_Export_2026-09-06_09-45-12.txt
+Processing 18 WiFi profiles...
+
+[1/18] CMCC-NPxe-5G  ->  P@ssw0rd123
+[2/18] HomeinnSelected  ->  Home@2024
+...
+============================================
+Export complete!
+  File location: D:\xxx\WiFi_Passwords_Export_2026-09-06_09-45-12.txt
+  Success      : 17
+  No password  : 1
+============================================
+```
+
+**TXT file content example**:
+```
+============================================================
+             WiFi Password Batch Export Report
+============================================================
+
+Export Time: 2026/09/06  9:45:12
+Tool Version: WiFi Password Query Tool v2.1
+Total WiFi Count: 18
+
+============================================================
+No.   WiFi Name                             WiFi Password
+============================================================
+ 1.  CMCC-NPxe-5G                          P@ssw0rd123
+ 2.  HomeinnSelected                        Home@2024
+ 3.  Redmi 8A                               abc123456
+...
+============================================================
+Export Stats: Success 17 / No Password 1 / Total 18
+============================================================
+```
+
 ### Step 4: Follow-up Actions
 After query completion, you can choose:
 - Enter `1` to continue querying other WiFi networks
-- Enter `2` to exit the program
+- Enter `2` to export all WiFi passwords to TXT
+- Enter `3` to exit the program
 
 ## Frequently Asked Questions
 
@@ -127,15 +174,22 @@ A: The tool is secure:
 - Only runs locally, does not upload any information
 - Password is displayed on screen only once
 - Automatically copied to clipboard for convenience
+- Exported TXT files are stored in the script directory, keep them safe
+
+### Q6: Where are exported TXT files saved?
+A: Export files are saved in the script directory, filename format:
+`WiFi_Passwords_Export_YYYY-MM-DD_HH-MM-SS.txt`
+Example: `WiFi_Passwords_Export_2026-09-06_09-45-12.txt`
 
 ## Error Messages
 
 | Error Message | Cause | Solution |
 |---------------|-------|----------|
 | Please run this script as Administrator! | Insufficient privileges | Right-click and select "Run as administrator" |
-| Error: No WiFi name entered! | Empty input | Enter a valid index or WiFi name, or enter q to exit |
+| Error: No WiFi name entered! | Empty input | Enter a valid index/WiFi name, or q to exit, or e to export |
 | Error: WiFi profile "xxx" not found! | Incorrect/non-existent WiFi name or invalid index | Check if the index is in range, or if the WiFi name is correct |
 | Error: Unable to retrieve password information | Password retrieval failed | The WiFi may not have a saved password |
+| Error: No WiFi configurations available to export! | No WiFi profiles in system | Connect and save at least one WiFi first |
 
 ## Technical Support
 
@@ -148,11 +202,12 @@ If you encounter problems during use:
 
 ## Version Information
 
-- Version: v2.0
+- Version: v2.1
 - Update Date: September 2026
 - Compatibility: Windows 7/8/10/11
 - Language Support: Chinese/English
 - Update Content:
+  - v2.1: Added batch export of all WiFi passwords to TXT file (timestamp-named, with stats report); added export option to main menu; main prompt supports `e` for one-click export
   - v2.0: Added index numbers to WiFi list, supported quick selection by index; compatible with both Chinese and English system output formats
 
 ## Disclaimer
