@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-chcp 65001 >nul
+chcp 936 >nul
 title WiFi Password Query Tool
 color 0A
 
@@ -41,13 +41,13 @@ for /f "tokens=1,2 delims=:" %%a in ('netsh wlan show profiles 2^>nul') do (
         set "name=!name:~1!"
         set "wifi_name_!wifi_count!=!name!"
     )
-    if "!header!"=="æ‰€æœ‰ç”¨æˆ·é…ç½®æ–‡ä»¶" (
+    if "!header!"=="ËùÓÐÓÃ»§ÅäÖÃÎÄ¼þ" (
         set /a wifi_count+=1
         set "name=%%b"
         set "name=!name:~1!"
         set "wifi_name_!wifi_count!=!name!"
     )
-    if "!header!"=="å½“å‰ç”¨æˆ·é…ç½®" (
+    if "!header!"=="µ±Ç°ÓÃ»§ÅäÖÃ" (
         set /a wifi_count+=1
         set "name=%%b"
         set "name=!name:~1!"
@@ -141,8 +141,10 @@ REM Extract WiFi password - Method 1
 set "password="
 for /f "tokens=*" %%i in ('netsh wlan show profile name^="%wifi_name%" key^=clear') do (
     set "line=%%i"
-    echo !line! | findstr /C:"Key Content" >nul
-    if not errorlevel 1 (
+    set "is_key="
+    if not "!line:Key Content=!"=="!line!" set "is_key=1"
+    if not "!line:¹Ø¼üÄÚÈÝ=!"=="!line!" set "is_key=1"
+    if defined is_key (
         for /f "tokens=2 delims=:" %%j in ("!line!") do (
             set "password=%%j"
             set "password=!password: =!"
@@ -199,7 +201,7 @@ set "timestamp=!timestamp: =0!"
 set "outfile=%~dp0WiFi_Passwords_Export_!datestamp!_!timestamp!.txt"
 
 echo.
-echo Output file: !outfile!
+echo Output file - !outfile!
 echo Processing !wifi_count! WiFi profiles...
 echo.
 
@@ -223,8 +225,10 @@ for /l %%n in (1,1,!wifi_count!) do (
     set "cur_pwd="
     for /f "tokens=*" %%k in ('netsh wlan show profile name^="!cur_name!" key^=clear 2^>nul') do (
         set "line=%%k"
-        echo !line! | findstr /C:"Key Content" /C:"å…³é”®å†…å®¹" >nul
-        if not errorlevel 1 (
+        set "is_key="
+        if not "!line:Key Content=!"=="!line!" set "is_key=1"
+        if not "!line:¹Ø¼üÄÚÈÝ=!"=="!line!" set "is_key=1"
+        if defined is_key (
             for /f "tokens=2 delims=:" %%p in ("!line!") do (
                 set "cur_pwd=%%p"
                 set "cur_pwd=!cur_pwd: =!"
@@ -259,9 +263,9 @@ echo ============================================================ >> "!outfile!"
 echo.
 echo ============================================
 echo Export complete!
-echo   File location: !outfile!
-echo   Success      : !exported_ok!
-echo   No password  : !exported_none!
+echo   File location - !outfile!
+echo   Success       - !exported_ok!
+echo   No password   - !exported_none!
 echo ============================================
 echo.
 pause

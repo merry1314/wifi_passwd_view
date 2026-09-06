@@ -1,14 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
-chcp 65001 >nul
-title WiFiå¯†ç æŸ¥è¯¢å·¥å…·
+chcp 936 >nul
+title WiFiÃÜÂë²éÑ¯¹¤¾ß
 color 0A
 
-REM æ£€æŸ¥ç®¡ç†å‘˜æƒé™
+REM ¼ì²é¹ÜÀíÔ±È¨ÏŞ
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo è¯·ä»¥ç®¡ç†å‘˜èº«ä»½è¿è¡Œæ­¤è„šæœ¬ï¼
-    echo æŒ‰ä»»æ„é”®é€€å‡º...
+    echo ÇëÒÔ¹ÜÀíÔ±Éí·İÔËĞĞ´Ë½Å±¾£¡
+    echo °´ÈÎÒâ¼üÍË³ö...
     pause >nul
     exit /b 1
 )
@@ -16,15 +16,15 @@ if %errorLevel% neq 0 (
 cls
 
 :main
-REM æ¸…é™¤ä¹‹å‰çš„WiFiæ•°ç»„å˜é‡ï¼Œé¿å…é‡å¤æ±¡æŸ“
+REM Çå³ıÖ®Ç°µÄWiFiÊı×é±äÁ¿£¬±ÜÃâÖØ¸´ÎÛÈ¾
 for /f "tokens=1 delims==" %%v in ('set wifi_name_ 2^>nul') do set "%%v="
 
 echo.
 echo ============================================
-echo            WiFiå¯†ç æŸ¥è¯¢å·¥å…·
+echo            WiFiÃÜÂë²éÑ¯¹¤¾ß
 echo ============================================
 
-REM è§£æå¹¶æ˜¾ç¤ºå¸¦åºå·çš„WiFié…ç½®æ–‡ä»¶åˆ—è¡¨
+REM ½âÎö²¢ÏÔÊ¾´øĞòºÅµÄWiFiÅäÖÃÎÄ¼şÁĞ±í
 set "wifi_count=0"
 for /f "tokens=1,2 delims=:" %%a in ('netsh wlan show profiles 2^>nul') do (
     set "header=%%a"
@@ -41,13 +41,13 @@ for /f "tokens=1,2 delims=:" %%a in ('netsh wlan show profiles 2^>nul') do (
         set "name=!name:~1!"
         set "wifi_name_!wifi_count!=!name!"
     )
-    if "!header!"=="æ‰€æœ‰ç”¨æˆ·é…ç½®æ–‡ä»¶" (
+    if "!header!"=="ËùÓĞÓÃ»§ÅäÖÃÎÄ¼ş" (
         set /a wifi_count+=1
         set "name=%%b"
         set "name=!name:~1!"
         set "wifi_name_!wifi_count!=!name!"
     )
-    if "!header!"=="å½“å‰ç”¨æˆ·é…ç½®" (
+    if "!header!"=="µ±Ç°ÓÃ»§ÅäÖÃ" (
         set /a wifi_count+=1
         set "name=%%b"
         set "name=!name:~1!"
@@ -56,25 +56,25 @@ for /f "tokens=1,2 delims=:" %%a in ('netsh wlan show profiles 2^>nul') do (
 )
 
 echo.
-echo æ¥å£ WLAN ä¸Šçš„é…ç½®æ–‡ä»¶:
+echo ½Ó¿Ú WLAN ÉÏµÄÅäÖÃÎÄ¼ş:
 echo.
-echo ç»„ç­–ç•¥é…ç½®æ–‡ä»¶(åªè¯»)
+echo ×é²ßÂÔÅäÖÃÎÄ¼ş(Ö»¶Á)
 echo ---------------------------------
-echo     ^<æ— ^>
+echo     ^<ÎŞ^>
 echo.
-echo ç”¨æˆ·é…ç½®æ–‡ä»¶
+echo ÓÃ»§ÅäÖÃÎÄ¼ş
 echo -------------
 if !wifi_count! equ 0 (
-    echo     ^<æ— ^>
+    echo     ^<ÎŞ^>
 ) else (
     for /l %%i in (1,1,!wifi_count!) do (
         set "idx=%%i"
         if !idx! lss 10 (
-            echo     !idx!. æ‰€æœ‰ç”¨æˆ·é…ç½®æ–‡ä»¶ : !wifi_name_%%i!
+            echo     !idx!. ËùÓĞÓÃ»§ÅäÖÃÎÄ¼ş : !wifi_name_%%i!
         ) else if !idx! lss 100 (
-            echo    !idx!. æ‰€æœ‰ç”¨æˆ·é…ç½®æ–‡ä»¶ : !wifi_name_%%i!
+            echo    !idx!. ËùÓĞÓÃ»§ÅäÖÃÎÄ¼ş : !wifi_name_%%i!
         ) else (
-            echo   !idx!. æ‰€æœ‰ç”¨æˆ·é…ç½®æ–‡ä»¶ : !wifi_name_%%i!
+            echo   !idx!. ËùÓĞÓÃ»§ÅäÖÃÎÄ¼ş : !wifi_name_%%i!
         )
     )
 )
@@ -82,13 +82,13 @@ if !wifi_count! equ 0 (
 echo.
 echo.
 set "input="
-set /p "input=è¯·è¾“å…¥åºå·æˆ–WiFiåç§°æŸ¥è¯¢å¯†ç ï¼ˆeå¯¼å‡ºæ‰€æœ‰ï¼Œqé€€å‡ºç¨‹åºï¼‰ï¼š"
+set /p "input=ÇëÊäÈëĞòºÅ»òWiFiÃû³Æ²éÑ¯ÃÜÂë£¨eµ¼³öËùÓĞ£¬qÍË³ö³ÌĞò£©£º"
 
 if /i "!input!"=="q" goto exit
 if /i "!input!"=="e" goto export_all
 
 set "wifi_name="
-REM åˆ¤æ–­æ˜¯å¦ä¸ºæ•°å­—åºå·
+REM ÅĞ¶ÏÊÇ·ñÎªÊı×ÖĞòºÅ
 set "is_number=0"
 for /f "delims=0123456789" %%d in ("!input!") do set "is_number=1"
 if "!is_number!"=="0" if not "!input!"=="" (
@@ -97,14 +97,14 @@ if "!is_number!"=="0" if not "!input!"=="" (
     )
 )
 
-REM å¦‚æœæ²¡æœ‰é€šè¿‡åºå·é€‰æ‹©ï¼Œåˆ™ç›´æ¥ä½¿ç”¨è¾“å…¥ä½œä¸ºWiFiåç§°
+REM Èç¹ûÃ»ÓĞÍ¨¹ıĞòºÅÑ¡Ôñ£¬ÔòÖ±½ÓÊ¹ÓÃÊäÈë×÷ÎªWiFiÃû³Æ
 if "!wifi_name!"=="" (
     set "wifi_name=!input!"
 )
 
 if "!wifi_name!"=="" (
     echo.
-    echo é”™è¯¯ï¼šæ²¡æœ‰è¾“å…¥WiFiåç§°ï¼
+    echo ´íÎó£ºÃ»ÓĞÊäÈëWiFiÃû³Æ£¡
     set "wifi_name="
     set "input="
     timeout /t 3 >nul
@@ -112,18 +112,18 @@ if "!wifi_name!"=="" (
 )
 if "!wifi_name!"==" " (
     echo.
-    echo é”™è¯¯ï¼šæ²¡æœ‰è¾“å…¥WiFiåç§°ï¼
+    echo ´íÎó£ºÃ»ÓĞÊäÈëWiFiÃû³Æ£¡
     set "wifi_name="
     set "input="
     timeout /t 3 >nul
     goto main
 )
 
-REM æ£€æŸ¥WiFié…ç½®æ–‡ä»¶æ˜¯å¦å­˜åœ¨
+REM ¼ì²éWiFiÅäÖÃÎÄ¼şÊÇ·ñ´æÔÚ
 netsh wlan show profile name="%wifi_name%" >nul 2>&1
 if %errorLevel% neq 0 (
     echo.
-    echo é”™è¯¯ï¼šæ‰¾ä¸åˆ°åä¸º"%wifi_name%"çš„WiFié…ç½®æ–‡ä»¶ï¼
+    echo ´íÎó£ºÕÒ²»µ½ÃûÎª"%wifi_name%"µÄWiFiÅäÖÃÎÄ¼ş£¡
     set "wifi_name="
     timeout /t 3 >nul
     goto main
@@ -131,30 +131,32 @@ if %errorLevel% neq 0 (
 
 echo.
 echo ============================================
-echo              WiFiå¯†ç æŸ¥è¯¢ç»“æœ
+echo              WiFiÃÜÂë²éÑ¯½á¹û
 echo ============================================
 echo.
-echo æ­£åœ¨æŸ¥æ‰¾å¯†ç ä¿¡æ¯...
+echo ÕıÔÚ²éÕÒÃÜÂëĞÅÏ¢...
 echo.
 
-REM æå–WiFiå¯†ç  - æ–¹æ³•1
+REM ÌáÈ¡WiFiÃÜÂë - ·½·¨1
 set "password="
 for /f "tokens=*" %%i in ('netsh wlan show profile name^="%wifi_name%" key^=clear') do (
     set "line=%%i"
-    echo !line! | findstr /C:"Key Content" /C:"å…³é”®å†…å®¹" >nul
-    if not errorlevel 1 (
+    set "is_key="
+    if not "!line:Key Content=!"=="!line!" set "is_key=1"
+    if not "!line:¹Ø¼üÄÚÈİ=!"=="!line!" set "is_key=1"
+    if defined is_key (
         for /f "tokens=2 delims=:" %%j in ("!line!") do (
             set "password=%%j"
             set "password=!password: =!"
             if not "!password!"=="" (
                 echo.
                 echo ============================================
-                echo WiFiåç§°: %wifi_name%
-                echo WiFiå¯†ç : !password!
+                echo WiFiÃû³Æ: %wifi_name%
+                echo WiFiÃÜÂë: !password!
                 echo ============================================
                 echo !password!| clip 
                 echo.
-                echo [å¯†ç å·²å¤åˆ¶åˆ°å‰ªè´´æ¿]
+                echo [ÃÜÂëÒÑ¸´ÖÆµ½¼ôÌù°å]
                 goto :main_menu
             )
         )
@@ -162,8 +164,8 @@ for /f "tokens=*" %%i in ('netsh wlan show profile name^="%wifi_name%" key^=clea
 )
 
 
-REM å¦‚æœä»ç„¶æ— æ³•è·å–å¯†ç 
-echo é”™è¯¯ï¼šæ— æ³•è·å–å¯†ç ä¿¡æ¯ï¼Œå¯èƒ½æ˜¯è¯¥WiFiæ²¡æœ‰ä¿å­˜å¯†ç ã€‚
+REM Èç¹ûÈÔÈ»ÎŞ·¨»ñÈ¡ÃÜÂë
+echo ´íÎó£ºÎŞ·¨»ñÈ¡ÃÜÂëĞÅÏ¢£¬¿ÉÄÜÊÇ¸ÃWiFiÃ»ÓĞ±£´æÃÜÂë¡£
 set "wifi_name="
 timeout /t 4 >nul
 goto main
@@ -171,11 +173,11 @@ goto main
 :main_menu
 echo.
 echo ============================================
-echo 1. ç»§ç»­æŸ¥è¯¢å…¶ä»–WiFi
-echo 2. å¯¼å‡ºæ‰€æœ‰WiFiå¯†ç åˆ°TXT
-echo 3. é€€å‡ºç¨‹åº
+echo 1. ¼ÌĞø²éÑ¯ÆäËûWiFi
+echo 2. µ¼³öËùÓĞWiFiÃÜÂëµ½TXT
+echo 3. ÍË³ö³ÌĞò
 echo ============================================
-choice /c 123 /m "è¯·é€‰æ‹©æ“ä½œ"
+choice /c 123 /m "ÇëÑ¡Ôñ²Ù×÷"
 if errorlevel 3 goto exit
 if errorlevel 2 goto export_all
 if errorlevel 1 goto main
@@ -183,37 +185,37 @@ if errorlevel 1 goto main
 :export_all
 echo.
 echo ============================================
-echo        æ‰¹é‡å¯¼å‡ºWiFiå¯†ç ï¼ˆTXTæ ¼å¼ï¼‰
+echo        ÅúÁ¿µ¼³öWiFiÃÜÂë£¨TXT¸ñÊ½£©
 echo ============================================
 if !wifi_count! equ 0 (
     echo.
-    echo é”™è¯¯ï¼šå½“å‰æ²¡æœ‰å¯å¯¼å‡ºçš„WiFié…ç½®ï¼
+    echo ´íÎó£ºµ±Ç°Ã»ÓĞ¿Éµ¼³öµÄWiFiÅäÖÃ£¡
     timeout /t 3 >nul
     goto main
 )
 
-REM ç”Ÿæˆå¸¦æ—¥æœŸæ—¶é—´æˆ³çš„æ–‡ä»¶å
+REM Éú³É´øÈÕÆÚÊ±¼ä´ÁµÄÎÄ¼şÃû
 set "datestamp=%date:~0,4%-%date:~5,2%-%date:~8,2%"
 set "timestamp=%time:~0,2%-%time:~3,2%-%time:~6,2%"
 set "timestamp=!timestamp: =0!"
-set "outfile=%~dp0WiFiå¯†ç å¯¼å‡º_!datestamp!_!timestamp!.txt"
+set "outfile=%~dp0WiFiÃÜÂëµ¼³ö_!datestamp!_!timestamp!.txt"
 
 echo.
-echo å¯¼å‡ºæ–‡ä»¶è·¯å¾„: !outfile!
-echo æ­£åœ¨å¤„ç† å…± !wifi_count! ä¸ªWiFié…ç½®...
+echo µ¼³öÎÄ¼şÂ·¾¶ - !outfile!
+echo ÕıÔÚ´¦Àí ¹² !wifi_count! ¸öWiFiÅäÖÃ...
 echo.
 
-REM å†™å…¥æ–‡ä»¶å¤´
+REM Ğ´ÈëÎÄ¼şÍ·
 echo ============================================================ > "!outfile!"
-echo               WiFiå¯†ç æ‰¹é‡å¯¼å‡ºæŠ¥å‘Š                          >> "!outfile!"
+echo               WiFiÃÜÂëÅúÁ¿µ¼³ö±¨¸æ                          >> "!outfile!"
 echo ============================================================ >> "!outfile!"
 echo.  >> "!outfile!"
-echo å¯¼å‡ºæ—¶é—´: %date% %time% >> "!outfile!"
-echo å¯¼å‡ºå·¥å…·: WiFiå¯†ç æŸ¥è¯¢å·¥å…· v2.1 >> "!outfile!"
-echo WiFiæ€»æ•°: !wifi_count! >> "!outfile!"
+echo µ¼³öÊ±¼ä: %date% %time% >> "!outfile!"
+echo µ¼³ö¹¤¾ß: WiFiÃÜÂë²éÑ¯¹¤¾ß v2.1 >> "!outfile!"
+echo WiFi×ÜÊı: !wifi_count! >> "!outfile!"
 echo.  >> "!outfile!"
 echo ============================================================ >> "!outfile!"
-echo åºå·   WiFiåç§°                              WiFiå¯†ç        >> "!outfile!"
+echo ĞòºÅ   WiFiÃû³Æ                              WiFiÃÜÂë       >> "!outfile!"
 echo ============================================================ >> "!outfile!"
 
 set "exported_ok=0"
@@ -223,8 +225,10 @@ for /l %%n in (1,1,!wifi_count!) do (
     set "cur_pwd="
     for /f "tokens=*" %%k in ('netsh wlan show profile name^="!cur_name!" key^=clear 2^>nul') do (
         set "line=%%k"
-        echo !line! | findstr /C:"Key Content" /C:"å…³é”®å†…å®¹" >nul
-        if not errorlevel 1 (
+        set "is_key="
+        if not "!line:Key Content=!"=="!line!" set "is_key=1"
+        if not "!line:¹Ø¼üÄÚÈİ=!"=="!line!" set "is_key=1"
+        if defined is_key (
             for /f "tokens=2 delims=:" %%p in ("!line!") do (
                 set "cur_pwd=%%p"
                 set "cur_pwd=!cur_pwd: =!"
@@ -232,7 +236,7 @@ for /l %%n in (1,1,!wifi_count!) do (
         )
     )
 
-    REM åºå·å³å¯¹é½ + WiFiåä¸å¯†ç å·¦å¯¹é½å¡«å……
+    REM ĞòºÅÓÒ¶ÔÆë + WiFiÃûÓëÃÜÂë×ó¶ÔÆëÌî³ä
     set "idx_str=%%n"
     if %%n lss 10 set "idx_str= %%n"
     if %%n lss 100 if %%n geq 10 set "idx_str=%%n"
@@ -242,8 +246,8 @@ for /l %%n in (1,1,!wifi_count!) do (
 
     if "!cur_pwd!"=="" (
         set /a exported_none+=1
-        echo !idx_str!.  !name_pad! ^<æ— å¯†ç æˆ–å¼€æ”¾ç½‘ç»œ^> >> "!outfile!"
-        echo [%%n/!wifi_count!] !cur_name!  -^>  ^<æ— å¯†ç æˆ–å¼€æ”¾ç½‘ç»œ^>
+        echo !idx_str!.  !name_pad! ^<ÎŞÃÜÂë»ò¿ª·ÅÍøÂç^> >> "!outfile!"
+        echo [%%n/!wifi_count!] !cur_name!  -^>  ^<ÎŞÃÜÂë»ò¿ª·ÅÍøÂç^>
     ) else (
         set /a exported_ok+=1
         echo !idx_str!.  !name_pad! !cur_pwd! >> "!outfile!"
@@ -253,15 +257,15 @@ for /l %%n in (1,1,!wifi_count!) do (
 
 echo. >> "!outfile!"
 echo ============================================================ >> "!outfile!"
-echo å¯¼å‡ºç»Ÿè®¡: æˆåŠŸ !exported_ok! ä¸ª / æ— å¯†ç  !exported_none! ä¸ª / æ€»è®¡ !wifi_count! ä¸ª >> "!outfile!"
+echo µ¼³öÍ³¼Æ: ³É¹¦ !exported_ok! ¸ö / ÎŞÃÜÂë !exported_none! ¸ö / ×Ü¼Æ !wifi_count! ¸ö >> "!outfile!"
 echo ============================================================ >> "!outfile!"
 
 echo.
 echo ============================================
-echo å¯¼å‡ºå®Œæˆï¼
-echo   æ–‡ä»¶ä½ç½®: !outfile!
-echo   æˆåŠŸå¯¼å‡º: !exported_ok! ä¸ª
-echo   æ— å¯†ç   : !exported_none! ä¸ª
+echo µ¼³öÍê³É£¡
+echo   ÎÄ¼şÎ»ÖÃ - !outfile!
+echo   ³É¹¦µ¼³ö - !exported_ok! ¸ö
+echo   ÎŞÃÜÂë   - !exported_none! ¸ö
 echo ============================================
 echo.
 pause
@@ -269,6 +273,6 @@ goto main
 
 :exit
 echo.
-echo æ­£åœ¨é€€å‡ºWiFiå¯†ç æŸ¥è¯¢å·¥å…·...
+echo ÕıÔÚÍË³öWiFiÃÜÂë²éÑ¯¹¤¾ß...
 timeout /t 2 >nul
 exit /b 0
