@@ -4,12 +4,19 @@
 
 | 文件名 / Filename | 说明 / Description |
 |------------------|-------------------|
+| `wifi_password_tool_auto.bat` | **统一版（推荐）** 自动识别系统语言，动态匹配 netsh 关键词 / **Unified (Recommended)** Auto-detect language, dynamic netsh matching |
 | `wifi_password_tool.bat` | 中文版WiFi密码查询工具 / Chinese version |
 | `select_wifi_passwd_optimized.bat` | 英文版WiFi密码查询工具 / English version |
 | `WiFi密码查询工具使用说明.md` | 中文详细使用说明 / Chinese detailed manual |
 | `WiFi_Password_Query_Tool_Manual.md` | 英文详细使用说明 / English detailed manual |
 
 ## 快速开始 / Quick Start
+
+### 推荐方式（自动识别语言）/ Recommended (Auto Language Detection)
+1. 右键点击 `wifi_password_tool_auto.bat` / Right-click on `wifi_password_tool_auto.bat`
+2. 选择"以管理员身份运行" / Select "Run as administrator"
+3. 脚本自动识别系统语言并显示对应界面 / Auto-detects system language and shows corresponding interface
+4. 也可强制指定语言：`wifi_password_tool_auto.bat zh` 或 `en` / Or force language: `wifi_password_tool_auto.bat zh` or `en`
 
 ### 中文用户 / For Chinese Users
 1. 右键点击 `wifi_password_tool.bat`
@@ -20,6 +27,21 @@
 1. Right-click on `select_wifi_passwd_optimized.bat`
 2. Select "Run as administrator"
 3. Follow the prompts
+
+## 多语言适配说明 / Multi-language Adaptation
+
+### 自动语言检测 / Auto Language Detection
+`wifi_password_tool_auto.bat` 按以下顺序检测系统语言 / detects system language in this order:
+1. 命令行参数（`zh`/`en`/`ja`/`ko`/`de`/`fr` 等）/ Command line argument
+2. 注册表 `HKCU\Control Panel\International\LocaleName` / Registry LocaleName
+3. `wmic os get oslanguage` LCID 映射 / wmic OSLanguage LCID mapping
+4. `LANG` 环境变量 / LANG environment variable
+5. 默认英文 / Default to English
+
+### 动态 netsh 关键词匹配 / Dynamic netsh Keyword Matching
+- **配置文件解析**：中英文类型关键词精确匹配 + 通用模式后备（提取最后一个 `:` 后内容），支持所有语言的 netsh 输出
+- **密码提取**：18 种语言关键词匹配（中/英/日/韩/德/法/俄/西/意/葡/波/荷/土/匈/瑞/芬/丹/挪）+ 通用后备（行同时包含 `key` 和 `content`）
+- **界面语言**：中文系统显示中文界面，其他语言系统显示英文界面（netsh 解析仍支持多语言）
 
 ## 重要提醒 / Important Notes
 
@@ -36,6 +58,8 @@
 - 📤 一键批量导出所有WiFi密码为TXT / One-click batch export all WiFi passwords to TXT
 - 📋 自动复制密码到剪贴板 / Auto-copy password to clipboard
 - 🌐 支持中文和英文界面 / Support Chinese and English interfaces
+- 🤖 自动识别系统语言（v3.0）/ Auto-detect system language (v3.0)
+- 🔧 动态匹配 netsh 多语言输出关键词 / Dynamic multi-language netsh keyword matching
 - 🛡️ 安全的本地运行 / Secure local execution
 
 ## 系统要求 / System Requirements
