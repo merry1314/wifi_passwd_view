@@ -211,8 +211,33 @@ echo ============================================
 choice /c 1234 /m "!str_select_option!"
 if errorlevel 4 goto exit
 if errorlevel 3 goto copy_wifi_string
-if errorlevel 2 goto export_all
+if errorlevel 2 goto export_current
 if errorlevel 1 goto main
+
+REM --- Export only the currently queried WiFi (from main_menu option 2) ---
+:export_current
+echo.
+if "!last_wifi_password!"=="" (
+    echo !str_err_no_wifi!
+    timeout /t 3 >nul
+    goto main_menu
+)
+REM Find index of last_wifi_name in the wifi_name_ array
+set "current_idx=0"
+for /l %%i in (1,1,!wifi_count!) do (
+    if /i "!wifi_name_%%i!"=="!last_wifi_name!" set "current_idx=%%i"
+)
+if "!current_idx!"=="0" (
+    echo !str_err_not_found!
+    timeout /t 3 >nul
+    goto main_menu
+)
+REM Mark only this index as selected, skip scope selection
+for /l %%i in (1,1,!wifi_count!) do set "sel_%%i=0"
+set "sel_!current_idx!=1"
+set "export_selected=1"
+set "export_mode=selected"
+goto export_format_choose
 
 REM --- Copy WiFi connect string for QR scan ---
 :copy_wifi_string
@@ -564,14 +589,14 @@ if /i "!sys_lang!"=="zh" (
     set "str_user_profiles=用户配置文件"
     set "str_none=无"
     set "str_profile_type=所有用户配置文件"
-    set "str_input_prompt=请输入序号或WiFi名称查询密码（e导出所有，q退出程序）："
+    set "str_input_prompt=请输入序号或WiFi名称查询密码（e导出，q退出程序）："
     set "str_query_result=WiFi密码查询结果"
     set "str_searching=正在查找密码信息..."
     set "str_wifi_name=WiFi名称:"
     set "str_wifi_password=WiFi密码:"
     set "str_copied=[密码已复制到剪贴板]"
     set "str_menu_continue=继续查询其他WiFi"
-    set "str_menu_export=导出所有WiFi密码到TXT/CSV"
+    set "str_menu_export=导出当前WiFi密码"
     set "str_menu_qr=复制WiFi连接字符串（手机扫码）"
     set "str_menu_exit=退出程序"
     set "str_select_option=请选择操作"
@@ -626,14 +651,14 @@ if /i "!sys_lang!"=="zh" (
     set "str_user_profiles=User profiles"
     set "str_none=None"
     set "str_profile_type=All User Profile"
-    set "str_input_prompt=Enter index/WiFi name to query (e=export all, q=exit): "
+    set "str_input_prompt=Enter index/WiFi name to query (e=export, q=exit): "
     set "str_query_result=WiFi Password Query Result"
     set "str_searching=Searching for password information..."
     set "str_wifi_name=WiFi Name:"
     set "str_wifi_password=WiFi Password:"
     set "str_copied=[Password copied to clipboard]"
     set "str_menu_continue=Query another WiFi"
-    set "str_menu_export=Export all WiFi passwords to TXT/CSV"
+    set "str_menu_export=Export current WiFi password"
     set "str_menu_qr=Copy WiFi connect string"
     set "str_menu_exit=Exit program"
     set "str_select_option=Please select an option"
