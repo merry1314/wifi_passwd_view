@@ -178,6 +178,8 @@ for /f "usebackq tokens=*" %%i in (`netsh wlan show profile name^="%wifi_name%" 
             set "password=%%k"
             for /f "tokens=* delims= " %%p in ("!password!") do set "password=%%p"
             if not "!password!"=="" (
+                set "last_wifi_name=!wifi_name!"
+                set "last_wifi_password=!password!"
                 echo.
                 echo ============================================
                 echo !str_wifi_name! %wifi_name%
@@ -203,11 +205,52 @@ echo.
 echo ============================================
 echo 1. !str_menu_continue!
 echo 2. !str_menu_export!
+echo 3. !str_menu_qr!
+echo 4. !str_menu_exit!
+echo ============================================
+choice /c 1234 /m "!str_select_option!"
+if errorlevel 4 goto exit
+if errorlevel 3 goto copy_wifi_string
+if errorlevel 2 goto export_all
+if errorlevel 1 goto main
+
+REM --- Copy WiFi connect string for QR scan ---
+:copy_wifi_string
+echo.
+if "!last_wifi_password!"=="" (
+    echo !str_err_no_wifi!
+    timeout /t 3 >nul
+    goto main_menu
+)
+REM Build standard WiFi connect string: WIFI:T:WPA;S:ssid;P:password;;
+REM Escape special chars per QR WiFi spec
+set "qr_ssid=!last_wifi_name!"
+set "qr_ssid=!qr_ssid:\=\\!"
+set "qr_ssid=!qr_ssid:;=\;!"
+set "qr_ssid=!qr_ssid:,=\,!"
+set "qr_ssid=!qr_ssid::=\:!"
+set "qr_pwd=!last_wifi_password!"
+set "qr_pwd=!qr_pwd:\=\\!"
+set "qr_pwd=!qr_pwd:;=\;!"
+set "qr_pwd=!qr_pwd:,=\,!"
+set "qr_pwd=!qr_pwd::=\:!"
+set "wifi_qr_string=WIFI:T:WPA;S:!qr_ssid!;P:!qr_pwd!;;"
+echo ============================================
+echo !str_qr_full!
+echo.
+echo !wifi_qr_string!
+echo ============================================
+echo.
+echo !wifi_qr_string!| clip
+echo !str_qr_copied!
+echo.
+echo 1. !str_menu_continue!
+echo 2. !str_menu_qr!
 echo 3. !str_menu_exit!
 echo ============================================
 choice /c 123 /m "!str_select_option!"
 if errorlevel 3 goto exit
-if errorlevel 2 goto export_all
+if errorlevel 2 goto copy_wifi_string
 if errorlevel 1 goto main
 
 :export_all
@@ -222,90 +265,192 @@ if !wifi_count! equ 0 (
     goto main
 )
 
+echo.
+echo !str_lang_info!
+echo.
+echo !str_export_scope_title!
+echo ============================================
+echo 1. !str_scope_all!
+echo 2. !str_scope_selected!
+echo 0. !str_scope_cancel!
+echo ============================================
+choice /c 120 /m "!str_select_option!"
+if errorlevel 3 goto main
+if errorlevel 2 goto export_scope_selected
+if errorlevel 1 goto export_scope_all
+
+:export_scope_all
+set "export_mode=all"
+goto export_format_choose
+
+:export_scope_selected
+echo.
+for /l %%i in (1,1,!wifi_count!) do set "sel_%%i=0"
+set "export_selected=0"
+set "sel_input="
+set /p "sel_input=!str_input_indices!"
+if "!sel_input!"=="" (
+    echo.
+    echo !str_err_no_selection!
+    timeout /t 3 >nul
+    goto export_all
+)
+call :parse_selection "!sel_input!"
+if "!export_selected!"=="0" (
+    echo.
+    echo !str_err_no_selection!
+    timeout /t 3 >nul
+    goto export_all
+)
+set "export_mode=selected"
+goto export_format_choose
+
+:export_format_choose
+echo.
+echo !str_export_format_title!
+echo ============================================
+echo 1. !str_format_txt!
+echo 2. !str_format_csv!
+echo 0. !str_format_cancel!
+echo ============================================
+choice /c 120 /m "!str_select_option!"
+if errorlevel 3 goto main
+if errorlevel 2 goto do_export_csv
+if errorlevel 1 goto do_export_txt
+
+:do_export_txt
+set "export_format=txt"
+goto do_export_proceed
+
+:do_export_csv
+set "export_format=csv"
+goto do_export_proceed
+
+:do_export_proceed
 REM Generate timestamped filename
 set "datestamp=%date:~0,4%-%date:~5,2%-%date:~8,2%"
 set "timestamp=%time:~0,2%-%time:~3,2%-%time:~6,2%"
 set "timestamp=!timestamp: =0!"
-set "outfile=%~dp0!str_export_filename!!datestamp!_!timestamp!.txt"
 
-echo.
-echo !str_output_file! !outfile!
-echo !str_processing! !wifi_count! !str_profiles_unit!
-echo.
-
-REM Write file header
-echo ============================================================ > "!outfile!"
-echo               !str_export_report_title!                          >> "!outfile!"
-echo ============================================================ >> "!outfile!"
-echo.  >> "!outfile!"
-echo !str_export_time!: %date% %time% >> "!outfile!"
-echo !str_tool_version!: WiFi Password Query Tool v3.0 >> "!outfile!"
-echo !str_total_count!: !wifi_count! >> "!outfile!"
-echo.  >> "!outfile!"
-echo ============================================================ >> "!outfile!"
-echo !str_col_index!   !str_col_name!                             !str_col_password!   >> "!outfile!"
-echo ============================================================ >> "!outfile!"
-
-set "exported_ok=0"
-set "exported_none=0"
-for /l %%n in (1,1,!wifi_count!) do (
-    set "cur_name=!wifi_name_%%n!"
-    set "cur_pwd="
-    for /f "usebackq tokens=*" %%k in (`netsh wlan show profile name^="!cur_name!" key^=clear 2^>nul`) do (
-        set "line=%%k"
-        set "is_key="
-        if not "!line:Key Content=!"=="!line!" set "is_key=1"
-        if not "!line:关键内容=!"=="!line!" set "is_key=1"
-        if not "!line:キー コンテンツ=!"=="!line!" set "is_key=1"
-        if not "!line:キーコンテンツ=!"=="!line!" set "is_key=1"
-        if not "!line:Schlüsselinhalt=!"=="!line!" set "is_key=1"
-        if not "!line:Contenu de la clé=!"=="!line!" set "is_key=1"
-        if not "!line:Contenido de la clave=!"=="!line!" set "is_key=1"
-        if not "!line:Содержимое ключа=!"=="!line!" set "is_key=1"
-        if not "!line:Conteúdo da chave=!"=="!line!" set "is_key=1"
-        if not "!line:Contenuto della chiave=!"=="!line!" set "is_key=1"
-        if not "!line:Zawartosc klucza=!"=="!line!" set "is_key=1"
-        if not "!line:Sleutelinhoud=!"=="!line!" set "is_key=1"
-        if not "!line:키 콘텐츠=!"=="!line!" set "is_key=1"
-        if not "!line:Anahtar Içerigi=!"=="!line!" set "is_key=1"
-        if not "!line:Kulcstartalom=!"=="!line!" set "is_key=1"
-        if not "!line:Nyckelinnehall=!"=="!line!" set "is_key=1"
-        if not "!line:Avaimen sisalto=!"=="!line!" set "is_key=1"
-        if not "!line:Nøgleindhold=!"=="!line!" set "is_key=1"
-        if not defined is_key (
-            echo "!line!"| findstr /i /c:"key" >nul && echo "!line!"| findstr /i /c:"content" >nul && set "is_key=1"
-        )
-        if defined is_key (
-            for /f "tokens=1,* delims=:" %%p in ("!line!") do (
-                set "cur_pwd=%%q"
-                for /f "tokens=* delims= " %%x in ("!cur_pwd!") do set "cur_pwd=%%x"
-            )
-        )
-    )
-
-    REM Right-align index + left-padded WiFi name
-    set "idx_str=%%n"
-    if %%n lss 10 set "idx_str= %%n"
-    if %%n lss 100 if %%n geq 10 set "idx_str=%%n"
-
-    set "name_pad=!cur_name!                                                    "
-    set "name_pad=!name_pad:~0,36!"
-
-    if "!cur_pwd!"=="" (
-        set /a exported_none+=1
-        echo !idx_str!.  !name_pad! ^<!str_no_password!^> >> "!outfile!"
-        echo [%%n/!wifi_count!] !cur_name!  -^>  ^<!str_no_password!^>
-    ) else (
-        set /a exported_ok+=1
-        echo !idx_str!.  !name_pad! !cur_pwd! >> "!outfile!"
-        echo [%%n/!wifi_count!] !cur_name!  -^>  !cur_pwd!
+REM Count total profiles to export for progress display
+set "export_total=0"
+if "!export_mode!"=="all" (
+    set "export_total=!wifi_count!"
+) else (
+    for /l %%i in (1,1,!wifi_count!) do (
+        if "!sel_%%i!"=="1" set /a export_total+=1
     )
 )
 
-echo. >> "!outfile!"
-echo ============================================================ >> "!outfile!"
-echo !str_export_stats!: !str_stats_success! !exported_ok! / !str_stats_none! !exported_none! / !str_stats_total! !wifi_count! >> "!outfile!"
-echo ============================================================ >> "!outfile!"
+if "!export_format!"=="csv" (
+    set "outfile=%~dp0!str_export_filename!!datestamp!_!timestamp!.csv"
+    REM Init CSV with UTF-8 BOM so Excel opens Chinese correctly
+    powershell -Command "[IO.File]::WriteAllBytes('!outfile!', [byte[]](0xEF,0xBB,0xBF))" >nul 2>&1
+    echo !str_col_index!,!str_col_name!,!str_col_password!>> "!outfile!"
+) else (
+    set "outfile=%~dp0!str_export_filename!!datestamp!_!timestamp!.txt"
+    REM Write TXT file header
+    echo ============================================================ > "!outfile!"
+    echo               !str_export_report_title!                          >> "!outfile!"
+    echo ============================================================ >> "!outfile!"
+    echo.  >> "!outfile!"
+    echo !str_export_time!: %date% %time% >> "!outfile!"
+    echo !str_tool_version!: WiFi Password Query Tool v3.0 >> "!outfile!"
+    echo !str_total_count!: !export_total! >> "!outfile!"
+    echo.  >> "!outfile!"
+    echo ============================================================ >> "!outfile!"
+    echo !str_col_index!   !str_col_name!                             !str_col_password!   >> "!outfile!"
+    echo ============================================================ >> "!outfile!"
+)
+
+echo.
+echo !str_output_file! !outfile!
+echo !str_processing! !export_total! !str_profiles_unit!
+echo.
+
+set "exported_ok=0"
+set "exported_none=0"
+set "export_processed=0"
+for /l %%n in (1,1,!wifi_count!) do (
+    set "skip_export="
+    if "!export_mode!"=="selected" if not "!sel_%%n!"=="1" set "skip_export=1"
+    if not defined skip_export (
+        set "cur_name=!wifi_name_%%n!"
+        set "cur_pwd="
+        for /f "usebackq tokens=*" %%k in (`netsh wlan show profile name^="!cur_name!" key^=clear 2^>nul`) do (
+            set "line=%%k"
+            set "is_key="
+            if not "!line:Key Content=!"=="!line!" set "is_key=1"
+            if not "!line:关键内容=!"=="!line!" set "is_key=1"
+            if not "!line:キー コンテンツ=!"=="!line!" set "is_key=1"
+            if not "!line:キーコンテンツ=!"=="!line!" set "is_key=1"
+            if not "!line:Schlüsselinhalt=!"=="!line!" set "is_key=1"
+            if not "!line:Contenu de la clé=!"=="!line!" set "is_key=1"
+            if not "!line:Contenido de la clave=!"=="!line!" set "is_key=1"
+            if not "!line:Содержимое ключа=!"=="!line!" set "is_key=1"
+            if not "!line:Conteúdo da chave=!"=="!line!" set "is_key=1"
+            if not "!line:Contenuto della chiave=!"=="!line!" set "is_key=1"
+            if not "!line:Zawartosc klucza=!"=="!line!" set "is_key=1"
+            if not "!line:Sleutelinhoud=!"=="!line!" set "is_key=1"
+            if not "!line:키 콘텐츠=!"=="!line!" set "is_key=1"
+            if not "!line:Anahtar Içerigi=!"=="!line!" set "is_key=1"
+            if not "!line:Kulcstartalom=!"=="!line!" set "is_key=1"
+            if not "!line:Nyckelinnehall=!"=="!line!" set "is_key=1"
+            if not "!line:Avaimen sisalto=!"=="!line!" set "is_key=1"
+            if not "!line:Nøgleindhold=!"=="!line!" set "is_key=1"
+            if not defined is_key (
+                echo "!line!"| findstr /i /c:"key" >nul && echo "!line!"| findstr /i /c:"content" >nul && set "is_key=1"
+            )
+            if defined is_key (
+                for /f "tokens=1,* delims=:" %%p in ("!line!") do (
+                    set "cur_pwd=%%q"
+                    for /f "tokens=* delims= " %%x in ("!cur_pwd!") do set "cur_pwd=%%x"
+                )
+            )
+        )
+
+        set /a export_processed+=1
+
+        if "!export_format!"=="csv" (
+            REM CSV output: index,name,password
+            if "!cur_pwd!"=="" (
+                set /a exported_none+=1
+                echo %%n,!cur_name!,>> "!outfile!"
+                echo [!export_processed!/!export_total!] !cur_name!  -^>  ^<!str_no_password!^>
+            ) else (
+                set /a exported_ok+=1
+                echo %%n,!cur_name!,!cur_pwd!>> "!outfile!"
+                echo [!export_processed!/!export_total!] !cur_name!  -^>  !cur_pwd!
+            )
+        ) else (
+            REM TXT output: aligned table format
+            set "idx_str=%%n"
+            if %%n lss 10 set "idx_str= %%n"
+            if %%n lss 100 if %%n geq 10 set "idx_str=%%n"
+
+            set "name_pad=!cur_name!                                                    "
+            set "name_pad=!name_pad:~0,36!"
+
+            if "!cur_pwd!"=="" (
+                set /a exported_none+=1
+                echo !idx_str!.  !name_pad! ^<!str_no_password!^> >> "!outfile!"
+                echo [!export_processed!/!export_total!] !cur_name!  -^>  ^<!str_no_password!^>
+            ) else (
+                set /a exported_ok+=1
+                echo !idx_str!.  !name_pad! !cur_pwd! >> "!outfile!"
+                echo [!export_processed!/!export_total!] !cur_name!  -^>  !cur_pwd!
+            )
+        )
+    )
+)
+
+REM TXT footer with stats (CSV keeps plain columns)
+if not "!export_format!"=="csv" (
+    echo. >> "!outfile!"
+    echo ============================================================ >> "!outfile!"
+    echo !str_export_stats!: !str_stats_success! !exported_ok! / !str_stats_none! !exported_none! / !str_stats_total! !export_total! >> "!outfile!"
+    echo ============================================================ >> "!outfile!"
+)
 
 echo.
 echo ============================================
@@ -426,10 +571,26 @@ if /i "!sys_lang!"=="zh" (
     set "str_wifi_password=WiFi密码:"
     set "str_copied=[密码已复制到剪贴板]"
     set "str_menu_continue=继续查询其他WiFi"
-    set "str_menu_export=导出所有WiFi密码到TXT"
+    set "str_menu_export=导出所有WiFi密码到TXT/CSV"
+    set "str_menu_qr=复制WiFi连接字符串（手机扫码）"
     set "str_menu_exit=退出程序"
     set "str_select_option=请选择操作"
-    set "str_export_title=批量导出WiFi密码（TXT格式）"
+    set "str_qr_full=WiFi连接字符串（手机相机扫码即可连接）"
+    set "str_qr_copied=[连接字符串已复制到剪贴板]"
+    set "str_err_no_wifi=错误：请先查询WiFi密码！"
+    set "str_csv_file=另存 CSV 文件 -"
+    set "str_export_format_title=请选择导出格式："
+    set "str_format_txt=导出为 TXT 文本文件"
+    set "str_format_csv=导出为 CSV 文件"
+    set "str_format_cancel=取消，返回主菜单"
+    set "str_export_scope_title=请选择导出范围："
+    set "str_scope_all=导出所有 WiFi 配置"
+    set "str_scope_selected=导出指定编号的 WiFi 配置"
+    set "str_scope_cancel=取消，返回主菜单"
+    set "str_input_indices=请输入要导出的编号（多个用逗号分隔，如 1,3,5）："
+    set "str_invalid_num=无效编号，已跳过："
+    set "str_err_no_selection=错误：未选择有效的编号！"
+    set "str_export_title=批量导出WiFi密码"
     set "str_export_filename=WiFi密码导出_"
     set "str_output_file=导出文件路径 -"
     set "str_processing=正在处理 共"
@@ -472,10 +633,26 @@ if /i "!sys_lang!"=="zh" (
     set "str_wifi_password=WiFi Password:"
     set "str_copied=[Password copied to clipboard]"
     set "str_menu_continue=Query another WiFi"
-    set "str_menu_export=Export all WiFi passwords to TXT"
+    set "str_menu_export=Export all WiFi passwords to TXT/CSV"
+    set "str_menu_qr=Copy WiFi connect string"
     set "str_menu_exit=Exit program"
     set "str_select_option=Please select an option"
-    set "str_export_title=Batch Export WiFi Passwords (TXT)"
+    set "str_qr_full=WiFi connect string (scan with phone camera to connect)"
+    set "str_qr_copied=[Connect string copied to clipboard]"
+    set "str_err_no_wifi=Error: Please query a WiFi password first!"
+    set "str_csv_file=CSV file also saved -"
+    set "str_export_format_title=Select export format:"
+    set "str_format_txt=Export as TXT text file"
+    set "str_format_csv=Export as CSV file"
+    set "str_format_cancel=Cancel, back to main menu"
+    set "str_export_scope_title=Select export scope:"
+    set "str_scope_all=Export all WiFi profiles"
+    set "str_scope_selected=Export selected WiFi profiles by index"
+    set "str_scope_cancel=Cancel, back to main menu"
+    set "str_input_indices=Enter indices to export (comma separated, e.g. 1,3,5): "
+    set "str_invalid_num=Invalid index, skipped:"
+    set "str_err_no_selection=Error: No valid index selected!"
+    set "str_export_title=Batch Export WiFi Passwords"
     set "str_export_filename=WiFi_Passwords_Export_"
     set "str_output_file=Output file -"
     set "str_processing=Processing"
@@ -566,6 +743,40 @@ if not "!extracted_name!"=="" (
         set "wifi_name_!wifi_count!=!extracted_name!"
     )
 )
+goto :eof
+
+REM ============================================================
+REM Subroutine: Parse comma-separated index list
+REM Marks sel_<n>=1 for each valid index, sets export_selected=1 if any
+REM Args: %1 = list like "1,3,5"
+REM ============================================================
+:parse_selection
+set "rest=%~1"
+:parse_sel_loop
+if "!rest!"=="" goto :parse_sel_done
+set "cur_num="
+for /f "tokens=1,* delims=," %%a in ("!rest!") do (
+    set "cur_num=%%a"
+    set "rest=%%b"
+)
+if not "!cur_num!"=="" (
+    for /f "tokens=* delims= " %%t in ("!cur_num!") do set "cur_num=%%t"
+    set "is_digit_only=0"
+    for /f "delims=0123456789" %%d in ("!cur_num!") do set "is_digit_only=1"
+    if "!cur_num!"=="" set "is_digit_only=1"
+    if "!is_digit_only!"=="0" (
+        if !cur_num! geq 1 if !cur_num! leq !wifi_count! (
+            set "sel_!cur_num!=1"
+            set "export_selected=1"
+        ) else (
+            echo     !str_invalid_num! !cur_num!
+        )
+    ) else (
+        echo     !str_invalid_num! !cur_num!
+    )
+)
+goto :parse_sel_loop
+:parse_sel_done
 goto :eof
 
 REM ============================================================

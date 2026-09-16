@@ -55,7 +55,8 @@
 - 🔢 支持按序号快速选择WiFi / Support quick WiFi selection by index
 - ⌨️ 支持直接输入WiFi名称 / Support direct WiFi name input
 - 🔑 查询指定WiFi的密码 / Query password for specified WiFi
-- 📤 一键批量导出所有WiFi密码为TXT / One-click batch export all WiFi passwords to TXT
+- 📤 批量导出WiFi密码：支持自选导出范围（全部/指定编号）和格式（TXT/CSV）/ Batch export: pick scope (all/selected indices) and format (TXT/CSV)
+- 📱 复制WiFi连接字符串（手机相机扫码即可连接）/ Copy WiFi connect string, scanable by phone camera
 - 📋 自动复制密码到剪贴板 / Auto-copy password to clipboard
 - 🌐 支持中文和英文界面 / Support Chinese and English interfaces
 - 🤖 自动识别系统语言（v3.0）/ Auto-detect system language (v3.0)
