@@ -475,6 +475,39 @@ func stripAnsi(s string) string {
 }
 
 // ============================================================
+// escapeForShellArg — protect cmd.exe /c "...\"%s\"..." invocations
+// from SSID injection. SSID is arbitrary user-controlled text and
+// could contain cmd.exe metacharacters like " & | < > ( ) ; , ^
+// that would otherwise be interpreted as shell syntax.
+// ============================================================
+func TestEscapeForShellArg(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"plain SSID unchanged", "HomeWiFi-5G", "HomeWiFi-5G"},
+		{"empty string", "", ""},
+		{"single quote doubled", `Foo"`, `"Foo""`},
+		{"ampersand escaped", "Foo&Bar", "Foo^&Bar"},
+		{"pipe escaped", "Foo|Bar", "Foo^|Bar"},
+		{"angle brackets escaped", "Foo<Bar>Baz", "Foo^<Bar^>Baz"},
+		{"parens escaped", "Foo(Bar)", "Foo^(Bar^)"},
+		{"caret escaped first", "Foo^Bar", "Foo^^Bar"},
+		{"combo injection attempt", `Foo"&calc&"`, `"Foo""^&calc^&""`},
+		{"space kept literal (handled by surrounding quotes)", "Foo Bar", "Foo Bar"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := escapeForShellArg(tt.in)
+			if got != tt.want {
+				t.Errorf("escapeForShellArg(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+// ============================================================
 // uniqueFilename — when the requested path already exists on disk,
 // append "_(2)", "_(3)", ... before the extension until a free slot
 // is found. Protects against same-second export / QR collisions.

@@ -39,11 +39,11 @@ $BUILD_DATE=(Get-Date -Format "yyyy-MM-dd")
 go build -ldflags "-X main.Version=$VERSION -X main.Commit=$COMMIT -X main.BuildDate=$BUILD_DATE -s -w" -o wifi_password_tool.exe
 ```
 
-`-s -w` 去掉符号表与调试信息，二进制从 ~6MB 缩到 ~3MB。
+`-s -w` 去掉符号表与调试信息，二进制从 ~6 MB 缩到 ~3 MB。
 
 ### 进一步压缩体积 / Further size reduction (UPX)
 
-如果需要 U 盘分发等场景，可叠加 UPX 把 ~3MB 进一步压到 **~1.5MB**：
+如果需要 U 盘分发等场景，可叠加 UPX 把 ~3 MB 进一步压到 **~1.5 MB**：
 
 ```powershell
 # 安装 UPX（任选一种方式）
@@ -109,7 +109,7 @@ go env -w GOSUMDB=sum.golang.org
 | 模糊搜索（`/关键词`） / Fuzzy search (`/keyword`) | ✅ (v3.1) | ✅ |
 | 自动识别语言 / Auto language detect | ✅ | ✅ |
 | 强制指定语言 / Force language | ✅ | ✅ |
-| 21 种语言 netsh 解析 / 21-lang netsh parsing | ✅ | ✅ |
+| 21 种语言 netsh 输出解析 / 21-lang netsh output parsing | ✅ | ✅ |
 | 密码复制到剪贴板 / Copy pwd to clipboard | ✅ | ✅ |
 | 批量导出 TXT / Batch export TXT | ✅ | ✅ |
 | 批量导出 CSV（带 BOM） / CSV export with BOM | ✅ | ✅ |
@@ -126,7 +126,7 @@ go env -w GOSUMDB=sum.golang.org
 | 二维码路径复制剪贴板 / QR path copied to clipboard | ❌ | ✅ |
 | Ctrl+C 优雅退出 / Ctrl+C graceful shutdown | ❌ | ✅ |
 | panic 恢复（堆栈输出）/ Panic recovery with stack | ❌ | ✅ |
-| 单元测试 / Unit tests | ❌ | ✅ (13 函数 / ~103 用例) |
+| 单元测试 / Unit tests | ❌ | ✅ (15 函数 / 120 子用例) |
 | 版本信息嵌入 / Version embedded in binary | ❌ | ✅ |
 
 ## 输出文件 / Output Files

@@ -12,7 +12,7 @@ The WiFi Password Query Tool is a Windows batch-based utility that helps users q
 - ✅ Support direct WiFi name input for query
 - ✅ Query passwords for specified WiFi networks
 - ✅ Automatically copy passwords to clipboard
-- ✅ Auto-detect system language (v3.0), also supports forced language via command line (`zh`/`en`/`ja` etc.)
+- ✅ Auto-detect system language (v3.1), also supports forced language via command line (`zh`/`en`/`ja` etc.)
 - ✅ Dynamic multi-language netsh keyword matching (21 languages, see [Language_Support.md](Language_Support.md))
 - ✅ Secure local execution, no data uploaded
 
@@ -41,7 +41,7 @@ The WiFi Password Query Tool is a Windows batch-based utility that helps users q
 ### 1. Download Files
 
 Download the following file to your desktop:
-- `wifi_password_tool_auto.bat` (v3.0 unified version, auto-detects language)
+- `wifi_password_tool_auto.bat` (v3.1 unified version, auto-detects language)
 
 ### 2. Run the Tool
 
@@ -171,7 +171,7 @@ Enter `e` at the main interface to start batch export:
 ────────────────────────────────────────────
 
 Export Time: 2026/09/17  10:30:00
-Tool Version: WiFi Password Query Tool v3.0
+Tool Version: WiFi Password Query Tool v3.1
 Total WiFi Count: 18
 
 ────────────────────────────────────────────

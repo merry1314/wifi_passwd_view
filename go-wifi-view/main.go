@@ -29,11 +29,11 @@ import (
 )
 
 // ============================================================
-// WiFi Password Query Tool v3.0 (Go edition)
+// WiFi Password Query Tool v3.1 (Go edition)
 // Single-file reimplementation of wifi_password_tool_auto.bat
 
 // Build-time version metadata. Override via:
-//   go build -ldflags "-X main.Version=v3.0.0 -X main.Commit=abc1234 -X main.BuildDate=2026-09-17"
+//   go build -ldflags "-X main.Version=v3.1.0 -X main.Commit=abc1234 -X main.BuildDate=2026-09-17"
 // ============================================================
 var (
 	Version   = "dev"
@@ -575,7 +575,7 @@ func parseProfileLine(line string) string {
 // ============================================================
 func getWiFiPassword(name string) string {
 	out, err := exec.Command("cmd", "/c",
-		fmt.Sprintf("chcp 65001 >nul & netsh wlan show profile name=\"%s\" key=clear", name)).Output()
+		fmt.Sprintf("chcp 65001 >nul & netsh wlan show profile name=\"%s\" key=clear", escapeForShellArg(name))).Output()
 	if err != nil {
 		return ""
 	}
@@ -823,7 +823,7 @@ func showMain() {
 // ============================================================
 func doQuery(name string) {
 	out, err := exec.Command("cmd", "/c",
-		fmt.Sprintf("chcp 65001 >nul & netsh wlan show profile name=\"%s\"", name)).Output()
+		fmt.Sprintf("chcp 65001 >nul & netsh wlan show profile name=\"%s\"", escapeForShellArg(name))).Output()
 	if err != nil || strings.Contains(string(out), "not found") {
 		fmt.Println()
 		fmt.Println(s["err_not_found"])
@@ -1217,6 +1217,40 @@ func generateQRImage() {
 	}
 }
 
+// escapeForShellArg escapes a string for safe inclusion as a quoted
+// argument inside a cmd.exe /c "..." invocation. cmd.exe has no proper
+// quoting mechanism: an embedded `"` ends the quoted region, and
+// unquoted `&` `|` `<` `>` `(` `)` are interpreted as shell metachars.
+//
+// This matters because a WiFi SSID is arbitrary user-controlled text
+// (the network owner picks it freely). Without escaping, an SSID like
+// `Foo"&calc&"` would execute `calc.exe` when we tried to query its
+// password.
+//
+// Strategy — escape cmd.exe metachars with `^`, then double every `"`.
+// `^` is the cmd.exe line-continuation / escape char.
+func escapeForShellArg(s string) string {
+	// Order matters: escape `^` first so our subsequent escapes aren't
+	// themselves escaped.
+	s = strings.ReplaceAll(s, "^", "^^")
+	s = strings.ReplaceAll(s, "&", "^&")
+	s = strings.ReplaceAll(s, "|", "^|")
+	s = strings.ReplaceAll(s, "<", "^<")
+	s = strings.ReplaceAll(s, ">", "^>")
+	s = strings.ReplaceAll(s, "(", "^(")
+	s = strings.ReplaceAll(s, ")", "^)")
+	s = strings.ReplaceAll(s, ",", "^,")
+	s = strings.ReplaceAll(s, ";", "^;")
+	// Doubling `"` keeps it inside the surrounding quotes
+	s = strings.ReplaceAll(s, `"`, `""`)
+	return s
+}
+
+// sanitizeFilename replaces filesystem- and shell-hostile characters in a
+// string with `_`. Used for SSID -> filename mapping. Distinct from
+// escapeForShellArg above: this handles Windows filename forbidden chars
+// (`\ / : * ? " < > |`) plus spaces, which cmd.exe would otherwise split
+// on.
 func sanitizeFilename(name string) string {
 	r := strings.NewReplacer(
 		`\`, "_", `/`, "_", `:`, "_",
@@ -1487,7 +1521,7 @@ func doExport(selected []int, format string) {
 		lines = append(lines, sep)
 		lines = append(lines, "")
 		lines = append(lines, fmt.Sprintf("%s: %s", s["export_time"], now.Format("2006-01-02 15:04:05")))
-		lines = append(lines, fmt.Sprintf("%s: WiFi Password Query Tool v3.0 (Go)", s["tool_version"]))
+		lines = append(lines, fmt.Sprintf("%s: %s v3.1 (Go)", s["tool_version"], s["title"]))
 		lines = append(lines, fmt.Sprintf("%s: %d", s["total_count"], total))
 		lines = append(lines, "")
 		lines = append(lines, sep)

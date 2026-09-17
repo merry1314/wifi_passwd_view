@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go 版 `uniqueFilename()`：导出文件 / QR 文件名冲突时自动追加 `_(2)`, `_(3)`...，避免同秒内重复导出被静默覆盖
 - Go 版空 WiFi 列表早退：检测到 0 个配置时打印本地化提示并优雅退出，避免强制用户对着空列表输入
 - Go 版 `TestUniqueFilename` 单元测试（5 子用例，含间隔跳号测试）
-- Go 版二进制 UPX 压缩步骤文档（`go-wifi-view/README.md` 进一步压缩体积章节），可叠加 `-s -w` 把 ~3MB 压到 ~1.5MB
+- Go 版 `TestEscapeForShellArg` 单元测试（10 子用例，防 SSID cmd.exe 注入）
+- Go 版二进制 UPX 压缩步骤文档（`go-wifi-view/README.md` 进一步压缩体积章节），可叠加 `-s -w` 把 ~3 MB 压到 ~1.5 MB
 - 顶层 README.md 双实现体积对照表更新：`~6 MB` → `~3 MB (-s -w)` / `~1.5 MB (+ UPX)`
 
 ### Fixed
@@ -37,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Go 版独有**（BAT 不需要，对应 Go 的可执行文件形态）
   - Ctrl+C 优雅退出（`signal.NotifyContext`，本地化退出消息）
   - `panic` 恢复（`debug.PrintStack` + 等按键退出）
-  - 单元测试 `main_test.go`（13 函数 / ~105 用例）
+  - 单元测试 `main_test.go`（15 函数 / 120 子用例，含 SSID 注入防护 `TestEscapeForShellArg`）
   - 版本信息嵌入二进制（`-ldflags "-X main.Version=v3.1.0 -X main.Commit=... -X main.BuildDate=..."`）
 - **QR 码优化**（仅 Go 版）
   - WiFi 名称移到二维码**下方**显示（避免长 SSID 居中截断）
@@ -53,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `golang.org/x/image`（TTF 字体渲染，约 230KB 嵌入二进制）
 
 ### Changed
-- 顶层 README、BAT 双手册、Go README 的功能对照表统一为 21 种语言 netsh 解析
+- 顶层 README、BAT 双手册、Go README 的功能对照表统一为 21 种语言 netsh 输出解析
 - 项目结构图同步新增 `main_test.go` 和 `Language_Support.md`
 - 导出报告工具版本号：硬编码 `WiFi Password Query Tool v3.0` → 本地化 `!str_title! v3.1`
   - 中文界面：`导出工具: WiFi密码查询工具 v3.1`
