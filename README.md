@@ -13,7 +13,7 @@ A Windows utility for viewing saved WiFi passwords. Ships in **two implementatio
 | 运行依赖 / Runtime deps | Windows 自带 / Windows built-in | 无（单 exe）/ none (single exe) |
 | 分发 / Distribution | 拷 `.bat` 即可 / copy `.bat` | 拷 `wifi_password_tool.exe` / copy the exe |
 | 编译需要 / Build needs | 无 / none | Go 1.21+ |
-| 文件大小 / Size | ~36 KB | ~6 MB（含内嵌字体）/ ~6 MB (with embedded font) |
+| 文件大小 / Size | ~36 KB | ~3 MB（`-s -w`）/ ~1.5 MB（+ UPX） |
 | 二维码图片 / QR image | ❌ | ✅ 带 SSID 标注 / with SSID label |
 | 文档 / Docs | 见子目录 / see subfolder | [go-wifi-view/README.md](go-wifi-view/README.md) |
 
@@ -74,6 +74,7 @@ go build -o wifi_password_tool.exe
 ```
 wifi_passwd_view/
 ├── README.md                              ← 本文件 / this file
+├── CHANGELOG.md                           ← 变更日志 / changelog
 ├── LICENSE                                ← MIT
 ├── bat-wifi-view/                         ← BAT 实现 / BAT edition
 │   ├── wifi_password_tool_auto.bat        ← 唯一入口（v3.1，统一版+模糊搜索+密码强度）/ sole entry (v3.1 unified + fuzzy + strength)

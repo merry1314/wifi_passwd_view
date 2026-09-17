@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -78,6 +80,12 @@ func TestExtractPassword(t *testing.T) {
 
 		// German
 		{"de schluessel", "    Schlüsselinhalt       : passwort", "passwort"},
+
+		// Danish
+		{"da noegleindhold", "    Nøgleindhold          : adgangskode", "adgangskode"},
+
+		// Norwegian (added in v3.1 — was previously relying on key/content fallback)
+		{"no noekkelinnhold", "    Nøkkelinnhold         : passord", "passord"},
 
 		// Fallback: lowercase "key content" still matches
 		{"fallback lower", "    key content            : fallback123", "fallback123"},
@@ -464,6 +472,72 @@ func stripAnsi(s string) string {
 		i++
 	}
 	return b.String()
+}
+
+// ============================================================
+// uniqueFilename — when the requested path already exists on disk,
+// append "_(2)", "_(3)", ... before the extension until a free slot
+// is found. Protects against same-second export / QR collisions.
+// ============================================================
+func TestUniqueFilename(t *testing.T) {
+	tmp := t.TempDir()
+
+	tests := []struct {
+		name string
+		setup []string // filenames to pre-create before calling
+		input string
+		wantSuffix string // expected suffix appended ("" means no change)
+	}{
+		{
+			name: "no collision returns original",
+			setup: nil,
+			input: filepath.Join(tmp, "fresh.txt"),
+			wantSuffix: "",
+		},
+		{
+			name: "one collision appends _(2)",
+			setup: []string{"taken.txt"},
+			input: filepath.Join(tmp, "taken.txt"),
+			wantSuffix: "_(2).txt",
+		},
+		{
+			name: "two collisions appends _(3)",
+			setup: []string{"taken.txt", "taken_(2).txt"},
+			input: filepath.Join(tmp, "taken.txt"),
+			wantSuffix: "_(3).txt",
+		},
+		{
+			name: "gap in sequence still picks next free slot",
+			setup: []string{"a.txt", "a_(2).txt"}, // _(3) is free
+			input: filepath.Join(tmp, "a.txt"),
+			wantSuffix: "_(3).txt",
+		},
+		{
+			name: "preserves extension",
+			setup: []string{"x.png"},
+			input: filepath.Join(tmp, "x.png"),
+			wantSuffix: "_(2).png",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, f := range tt.setup {
+				if err := os.WriteFile(filepath.Join(tmp, f), []byte("x"), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			got := uniqueFilename(tt.input)
+			want := tt.input
+			if tt.wantSuffix != "" {
+				ext := filepath.Ext(tt.input)
+				want = strings.TrimSuffix(tt.input, ext) + tt.wantSuffix
+			}
+			if got != want {
+				t.Errorf("uniqueFilename(%q) = %q, want %q", tt.input, got, want)
+			}
+		})
+	}
 }
 
 // ============================================================

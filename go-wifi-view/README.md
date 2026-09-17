@@ -41,6 +41,36 @@ go build -ldflags "-X main.Version=$VERSION -X main.Commit=$COMMIT -X main.Build
 
 `-s -w` 去掉符号表与调试信息，二进制从 ~6MB 缩到 ~3MB。
 
+### 进一步压缩体积 / Further size reduction (UPX)
+
+如果需要 U 盘分发等场景，可叠加 UPX 把 ~3MB 进一步压到 **~1.5MB**：
+
+```powershell
+# 安装 UPX（任选一种方式）
+# Option A — winget（推荐）
+winget install upx
+
+# Option B — choco
+choco install upx -y
+
+# Option C — 手动下载：https://github.com/upx/upx/releases 下载 upx-X.Y.Z-win64.zip，
+# 解压后将 upx.exe 放到 PATH 中（或同目录下）
+
+# 编译并压缩
+go build -ldflags "-X main.Version=$VERSION -X main.Commit=$COMMIT -X main.BuildDate=$BUILD_DATE -s -w" -o wifi_password_tool.exe
+upx --best wifi_password_tool.exe
+```
+
+体积对比（典型值）：
+
+| 阶段 / Stage | 体积 / Size |
+|--------------|------------|
+| `go build`（默认）| ~6 MB |
+| `-s -w` | ~3 MB |
+| `-s -w` + `upx --best` | **~1.5 MB** |
+
+启动代价：UPX 自解压约 +50 ms，仅首次执行；运行期无 CPU 开销。
+
 首次 `go mod tidy` 会下载：
 
 - `github.com/skip2/go-qrcode` — 二维码生成 / QR generation

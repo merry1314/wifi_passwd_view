@@ -45,8 +45,8 @@ var (
 //           WiFi connect string, QR code image, query history
 // ============================================================
 
-// --- ANSI color codes ---
-const (
+// --- ANSI color codes (var so enableVT can blank them on non-VT terminals) ---
+var (
 	cReset    = "\033[0m"
 	cTitle    = "\033[36m"
 	cOK       = "\033[32m"
@@ -58,6 +58,23 @@ const (
 	cBarFill  = "\033[32m"
 	cBarEmpty = "\033[90m"
 )
+
+// disableColors blanks all ANSI codes. Called when the host can't enable
+// VT-100 processing (Windows 7 conhost without VT update, redirected
+// stdout like `tool.exe > out.txt`, MSYS pty without passthrough, etc.)
+// so users don't see raw "[36m" / "[0m" escape bytes in their terminal.
+func disableColors() {
+	cReset = ""
+	cTitle = ""
+	cOK = ""
+	cWarn = ""
+	cError = ""
+	cName = ""
+	cPwd = ""
+	cHint = ""
+	cBarFill = ""
+	cBarEmpty = ""
+}
 
 const sep = "────────────────────────────────────────────"
 
@@ -115,7 +132,12 @@ func main() {
 	}()
 
 	enableVT()
-	exec.Command("cmd", "/c", "chcp 65001 >nul").Run()
+	// Best-effort UTF-8 codepage. On non-standard Windows environments (e.g.
+	// ReactOS, wine, missing cmd.exe) this can fail — warn the user so they
+	// know to expect garbled text instead of silently producing mojibake.
+	if err := exec.Command("cmd", "/c", "chcp 65001 >nul").Run(); err != nil {
+		fmt.Fprintln(os.Stderr, "[WARN] chcp 65001 failed; non-ASCII text may be garbled.")
+	}
 
 	lang := "en"
 	if len(os.Args) > 1 {
@@ -133,7 +155,10 @@ func main() {
 	// network connections to flush.
 	setupSignalHandler()
 
-	exec.Command("cmd", "/c", "title "+s["title"]).Run()
+	// Best-effort console window title — cosmetic only; silently skip on
+	// failure (missing cmd.exe / non-standard shell) since this doesn't affect
+	// functionality.
+	_ = exec.Command("cmd", "/c", "title "+s["title"]).Run()
 
 	if !checkAdmin() {
 		fmt.Println()
@@ -144,6 +169,22 @@ func main() {
 	}
 
 	clearScreen()
+
+	// Empty-state guard: if the system has no saved WiFi profiles (fresh
+	// Windows install, user just reformatted, etc.), there's nothing for
+	// the tool to do — show a clear message and exit instead of rendering
+	// an empty list and forcing the user to type queries against nothing.
+	if len(getWiFiProfiles()) == 0 {
+		fmt.Println(sep)
+		fmt.Printf("          %s%s%s\n", cTitle, s["title"], cReset)
+		fmt.Println(sep)
+		fmt.Println()
+		fmt.Printf("  %s\n", s["err_no_profiles"])
+		fmt.Println()
+		fmt.Printf("  %s%s%s\n", cHint, s["press_exit"], cReset)
+		bufio.NewReader(os.Stdin).ReadString('\n')
+		os.Exit(0)
+	}
 
 	for {
 		showMain()
@@ -190,7 +231,15 @@ func enableVT() {
 	var mode uint32
 	procGetMode.Call(h, uintptr(unsafe.Pointer(&mode)))
 	mode |= 0x0004
-	procSetMode.Call(h, uintptr(mode))
+	// SetConsoleMode returns 0 on failure. On Windows 7 conhost (no VT
+	// update installed), redirected stdout (`tool.exe > out.txt`), or
+	// some emulation layers, the call fails. In that case disable ANSI
+	// color codes so output stays readable instead of showing raw
+	// escape sequences like "[36m".
+	ret, _, _ := procSetMode.Call(h, uintptr(mode))
+	if ret == 0 {
+		disableColors()
+	}
 }
 
 func clearScreen() {
@@ -286,6 +335,7 @@ func loadStrings(lang string) {
 			"qr_full":            "WiFi连接字符串（手机相机扫码即可连接）",
 			"qr_copied":          "[连接字符串已复制到剪贴板]",
 			"err_no_wifi":        cError + "[ERROR]" + cReset + " 请先查询WiFi密码！",
+			"err_no_profiles":    cWarn + "[INFO]" + cReset + " 未检测到任何已保存的 WiFi 配置。请先连接一个 WiFi 后再运行本工具。",
 			"export_format_title": "请选择导出格式：",
 			"format_txt":         "导出为 TXT 文本文件",
 			"format_csv":         "导出为 CSV 文件",
@@ -371,6 +421,7 @@ func loadStrings(lang string) {
 			"qr_full":            "WiFi connect string (scan with phone camera to connect)",
 			"qr_copied":          "[Connect string copied to clipboard]",
 			"err_no_wifi":        cError + "[ERROR]" + cReset + " Please query a WiFi password first!",
+			"err_no_profiles":    cWarn + "[INFO]" + cReset + " No saved WiFi profiles detected. Please connect to a WiFi network before running this tool.",
 			"export_format_title": "Select export format:",
 			"format_txt":         "Export as TXT text file",
 			"format_csv":         "Export as CSV file",
@@ -451,10 +502,12 @@ func copyToClipboard(text string) {
 	if err != nil {
 		return
 	}
-	c.Start()
+	if err := c.Start(); err != nil {
+		return
+	}
 	io.WriteString(stdin, text)
 	stdin.Close()
-	c.Wait()
+	_ = c.Wait() // best-effort clipboard write; failure means user just has to copy manually
 }
 
 // ============================================================
@@ -1098,6 +1151,7 @@ func generateQRImage() {
 	}
 	filename := filepath.Join(getExeDir(),
 		fmt.Sprintf("WiFi_QR_%s_%s.png", safeSSID, time.Now().Format("20060102_150405")))
+	filename = uniqueFilename(filename)
 
 	img, err := generateWiFiQRImage(qrStr, lastWiFiName)
 	if err != nil {
@@ -1135,7 +1189,12 @@ func generateQRImage() {
 	fmt.Println()
 	fmt.Println(sep)
 
-	exec.Command("cmd", "/c", "start", "", filename).Run()
+	// Best-effort: open the PNG in the default viewer. If start fails (e.g.
+	// no associated handler), the image is still saved on disk and the path
+	// was already copied to clipboard — user can open it manually.
+	if err := exec.Command("cmd", "/c", "start", "", filename).Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] failed to auto-open %s; open it manually.\n", filename)
+	}
 
 	for {
 		fmt.Printf("  1) %s\n", s["menu_continue"])
@@ -1166,6 +1225,25 @@ func sanitizeFilename(name string) string {
 		" ", "_",
 	)
 	return r.Replace(name)
+}
+
+// uniqueFilename returns `path` if no file exists there, otherwise appends
+// "_(2)", "_(3)", ... before the extension until a free slot is found.
+// Protects against same-second exports / QR re-generations overwriting
+// previous output silently.
+func uniqueFilename(path string) string {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return path
+	}
+	ext := filepath.Ext(path)
+	base := strings.TrimSuffix(path, ext)
+	for i := 2; i < 10000; i++ {
+		candidate := fmt.Sprintf("%s_(%d)%s", base, i, ext)
+		if _, err := os.Stat(candidate); os.IsNotExist(err) {
+			return candidate
+		}
+	}
+	return path // give up after absurdly many collisions
 }
 
 // ============================================================
@@ -1388,6 +1466,7 @@ func doExport(selected []int, format string) {
 	}
 	outfile := filepath.Join(getExeDir(),
 		fmt.Sprintf("%s%s_%s%s", s["export_filename"], datestamp, timestamp, ext))
+	outfile = uniqueFilename(outfile)
 
 	total := len(selected)
 	fmt.Println()
