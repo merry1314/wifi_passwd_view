@@ -2,7 +2,7 @@
 
 ## Tool Introduction
 
-The WiFi Password Query Tool is a Windows batch-based utility that helps users quickly view saved WiFi network passwords. The tool auto-detects system language (Chinese/English UI), dynamically matches netsh output in 18 languages, with simple operation and reliable security.
+The WiFi Password Query Tool is a Windows batch-based utility that helps users quickly view saved WiFi network passwords. The tool auto-detects system language (Chinese/English UI), dynamically matches netsh output in 21 languages, with simple operation and reliable security. See [Language_Support.md](Language_Support.md) for the full language matrix.
 
 ## Features
 
@@ -13,7 +13,7 @@ The WiFi Password Query Tool is a Windows batch-based utility that helps users q
 - ✅ Query passwords for specified WiFi networks
 - ✅ Automatically copy passwords to clipboard
 - ✅ Auto-detect system language (v3.0), also supports forced language via command line (`zh`/`en`/`ja` etc.)
-- ✅ Dynamic multi-language netsh keyword matching (18 languages)
+- ✅ Dynamic multi-language netsh keyword matching (21 languages, see [Language_Support.md](Language_Support.md))
 - ✅ Secure local execution, no data uploaded
 
 ### Export Features
@@ -73,8 +73,8 @@ Download the following file to your desktop:
 ### Step 1: Launch the Tool
 After running as administrator, the tool displays:
 - All saved WiFi configurations (with index numbers, compact format)
-- Quick key hint bar: `[e]export  [h]history  [q]quit  [index/name]query`
-- Input prompt: `Enter index/WiFi name to query (e=export, q=exit):`
+- Quick key hint bar: `[e]export  [h]history  [q]quit  [/keyword]fuzzy  [index/name]query`
+- Input prompt: `Enter index/WiFi name to query (e=export, q=exit, /keyword fuzzy search):`
 
 WiFi list display example:
 ```
@@ -89,7 +89,7 @@ WiFi list display example:
 ```
 
 ### Step 2: Select WiFi
-Three ways to select:
+Four ways to select:
 
 **Method 1: Enter index (Recommended)**
 - Enter the corresponding index number, e.g., `3` for the 3rd WiFi
@@ -97,7 +97,13 @@ Three ways to select:
 **Method 2: Enter WiFi name**
 - Enter the full WiFi name (case-sensitive)
 
-**Method 3: Quick keys**
+**Method 3: Fuzzy search (`/keyword`)**
+- Long WiFi list? Use `/` to trigger fuzzy search:
+  - `/home` → list all WiFis containing `home` (e.g., HomeWiFi-5G, home_office)
+  - `/xana 5g` → multi-token AND, list WiFis containing both `xana` and `5g`
+  - Case-insensitive, substring match; pick a number to select, Enter to cancel
+
+**Method 4: Quick keys**
 - `e` = Batch export WiFi passwords
 - `h` = View query history
 - `q` = Quit program
@@ -108,10 +114,21 @@ The tool displays:
 ────────────────────────────────────────────
   WiFi Name: [selected WiFi name] (yellow)
   WiFi Password: [actual password] (bright white)
+  Password strength: Strong [█████]  ← NEW: scored on length/classes/blacklist
 ────────────────────────────────────────────
 
   [OK] [Password copied to clipboard]
 ```
+
+**Password strength scoring rules** (0–5 points):
+- Length ≥12: +2 points; ≥8: +1 point; <8: −1 point
+- Character classes (uppercase / lowercase / digits / special) — 3+ classes = +2; exactly 2 = +1
+- Blacklisted passwords (e.g. `12345678`, `password`, `qwerty`, 29 entries) −4 points
+- Password contains the WiFi SSID as substring: −2 points
+- Contains 4 sequential characters (e.g. `1234`, `abcd`) −2 points
+- Contains 3+ repeated characters (e.g. `aaa`) −1 point
+- 0–1 pts = Weak (red); 2–3 pts = Medium (yellow); 4–5 pts = Strong (green)
+- The strength bar is hidden when the password is hidden (can't score what you can't see)
 
 ### Step 4: Main Menu
 After query, the main menu offers 6 options:
@@ -229,13 +246,14 @@ If you encounter issues:
 
 ## Version Information
 
-- Version: v3.0
+- Version: v3.1
 - Updated: September 2026
 - Compatibility: Windows 7/8/10/11 (Windows 10+ recommended)
-- Language Support: Chinese/English UI, 18-language netsh parsing
+- Language Support: Chinese/English UI, 21-language netsh parsing (see [Language_Support.md](Language_Support.md))
 - License: MIT License
 - Changelog:
-  - v3.0: Unified multi-language auto-detect version; dynamic 18-language netsh keyword matching; CSV export + WiFi connect string copy; export scope/format selection; UI optimization A+B+C (password toggle, progress bar, quick keys, history, ANSI colors, Unicode separators)
+  - v3.1: Fuzzy search (`/keyword`, multi-token AND, case-insensitive); password strength scoring (0–5, blacklist/sequential/repeat detection) shown only when password is visible
+  - v3.0: Unified multi-language auto-detect version; dynamic 21-language netsh keyword matching; CSV export + WiFi connect string copy; export scope/format selection; UI optimization A+B+C (password toggle, progress bar, quick keys, history, ANSI colors, Unicode separators)
   - v2.1: Added batch export to TXT; added export option in main menu
   - v2.0: Added index display in WiFi list; compatible with Chinese/English system output formats
 

@@ -67,7 +67,7 @@ go env -w GOSUMDB=sum.golang.org
 .\wifi_password_tool.exe en
 ```
 
-支持的语言代码与 BAT 版一致（`zh` / `en` / `ja` / `ko` / `de` / `fr` / `ru` / `es` / `it` / `pt` / `pl` / `nl` / `tr` / `ar` / `he` / `cs` / `hu` / `sv` / `fi` / `da` / `no`）。
+支持的语言代码与 BAT 版基本一致（`zh` / `en` / `ja` / `ko` / `de` / `fr` / `ru` / `es` / `it` / `pt` / `pl` / `nl` / `tr` / `ar` / `he` / `cs` / `hu` / `sv` / `fi` / `da` / `no`）。完整语言表、locale 名称、netsh 关键词见 [Language_Support.md](Language_Support.md)。
 
 ## 功能对照 / Feature Parity
 
@@ -76,17 +76,17 @@ go env -w GOSUMDB=sum.golang.org
 | 显示所有已保存 WiFi / List saved WiFi | ✅ | ✅ |
 | 按序号查询 / Query by index | ✅ | ✅ |
 | 按名称查询 / Query by name | ✅ | ✅ |
-| 模糊搜索（`/关键词`） / Fuzzy search (`/keyword`) | ❌ | ✅ |
+| 模糊搜索（`/关键词`） / Fuzzy search (`/keyword`) | ✅ (v3.1) | ✅ |
 | 自动识别语言 / Auto language detect | ✅ | ✅ |
 | 强制指定语言 / Force language | ✅ | ✅ |
-| 18 种语言 netsh 解析 / 18-lang netsh parsing | ✅ | ✅ |
+| 21 种语言 netsh 解析 / 21-lang netsh parsing | ✅ | ✅ |
 | 密码复制到剪贴板 / Copy pwd to clipboard | ✅ | ✅ |
 | 批量导出 TXT / Batch export TXT | ✅ | ✅ |
 | 批量导出 CSV（带 BOM） / CSV export with BOM | ✅ | ✅ |
 | 导出范围可选 / Export scope select | ✅ | ✅ |
 | 进度条 / Progress bar | ✅ | ✅ |
 | 显示/隐藏密码 / Password toggle | ✅ | ✅ |
-| 密码强度评分 / Password strength meter | ❌ | ✅ |
+| 密码强度评分 / Password strength meter | ✅ (v3.1) | ✅ |
 | 查询历史（10 条）/ Query history (10) | ✅ | ✅ |
 | ANSI 颜色 / ANSI colors | ✅ | ✅ |
 | WiFi 连接字符串 / Connect string | ✅ | ✅ |

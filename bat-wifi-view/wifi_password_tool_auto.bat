@@ -10,6 +10,7 @@ set "c_reset=!ESC![0m"
 set "c_bold=!ESC![1m"
 set "c_title=!ESC![36m"
 set "c_ok=!ESC![32m"
+set "c_warn=!ESC![33m"
 set "c_error=!ESC![31m"
 set "c_name=!ESC![33m"
 set "c_pwd=!ESC![97m"
@@ -113,6 +114,18 @@ set /p "input=!str_input_prompt!"
 if /i "!input!"=="q" goto exit
 if /i "!input!"=="e" goto export_all
 if /i "!input!"=="h" goto show_history
+
+REM --- Fuzzy search: /keyword (case-insensitive substring, multi-token AND) ---
+set "input_first=!input:~0,1!"
+if "!input_first!"=="/" (
+    if not "!input!"=="/" (
+        call :do_fuzzy_search
+        REM On match+select: wifi_name is set, jump to do_query.
+        if not "!wifi_name!"=="" goto do_query
+        REM No match or cancelled: loop back to main.
+        goto main
+    )
+)
 
 set "wifi_name="
 REM Check if input is a numeric index
@@ -222,6 +235,13 @@ echo !str_sep!
 echo   !str_wifi_name! !c_name!!last_wifi_name!!c_reset!
 if "!show_password!"=="1" (
     echo   !str_wifi_password! !c_pwd!!last_wifi_password!!c_reset!
+    REM --- Password strength (only when actual pwd is visible) ---
+    set "str_strength_pwd=!last_wifi_password!"
+    set "str_strength_ssid=!last_wifi_name!"
+    call :password_strength
+    set "bar_max=5"
+    call :build_strength_bar
+    echo   !str_password_strength! !str_strength_color!!str_strength_label!!c_reset! [!str_strength_bar!]
 ) else (
     echo   !str_wifi_password! !c_hint!!str_password_masked!!c_reset!
 )
@@ -714,9 +734,18 @@ if /i "!sys_lang!"=="zh" (
     set "str_user_profiles=用户配置文件"
     set "str_none=无"
     set "str_profile_type=所有用户配置文件"
-    set "str_input_prompt=请输入序号或WiFi名称查询密码（e导出，q退出程序）："
+    set "str_input_prompt=请输入序号或WiFi名称查询密码（e导出，q退出，/关键词模糊搜索）："
     set "str_query_result=WiFi密码查询结果"
     set "str_searching=正在查找密码信息..."
+    set "str_search_no_match=无匹配项"
+    set "str_search_matches=搜索匹配"
+    set "str_search_select=  >> 输入序号选择 (回车返回): "
+    set "str_search_invalid=无效选择，已取消"
+    set "str_password_strength=密码强度:"
+    set "str_strength_empty=无"
+    set "str_strength_weak=弱"
+    set "str_strength_medium=中等"
+    set "str_strength_strong=强"
     set "str_wifi_name=WiFi名称:"
     set "str_wifi_password=WiFi密码:"
     set "str_copied=[密码已复制到剪贴板]"
@@ -775,7 +804,7 @@ if /i "!sys_lang!"=="zh" (
     set "str_history_title=查询历史记录"
     set "str_history_empty=暂无查询历史"
     set "str_history_prompt=输入序号可快速重新查询（q返回主菜单）："
-    set "str_hint_bar=[e]导出  [h]历史  [q]退出  [序号/名称]查询"
+    set "str_hint_bar=[e]导出  [h]历史  [q]退出  [/关键词]模糊搜索  [序号/名称]查询"
     set "str_progress_done=完成"
 ) else (
     set "str_title=WiFi Password Query Tool"
@@ -785,9 +814,18 @@ if /i "!sys_lang!"=="zh" (
     set "str_user_profiles=User profiles"
     set "str_none=None"
     set "str_profile_type=All User Profile"
-    set "str_input_prompt=Enter index/WiFi name to query (e=export, q=exit): "
+    set "str_input_prompt=Enter index/WiFi name to query (e=export, q=exit, /keyword fuzzy search): "
     set "str_query_result=WiFi Password Query Result"
     set "str_searching=Searching for password information..."
+    set "str_search_no_match=No matches"
+    set "str_search_matches=Search matches"
+    set "str_search_select=  >> Pick a number (Enter to cancel): "
+    set "str_search_invalid=Invalid selection, cancelled"
+    set "str_password_strength=Password strength:"
+    set "str_strength_empty=N/A"
+    set "str_strength_weak=Weak"
+    set "str_strength_medium=Medium"
+    set "str_strength_strong=Strong"
     set "str_wifi_name=WiFi Name:"
     set "str_wifi_password=WiFi Password:"
     set "str_copied=[Password copied to clipboard]"
@@ -846,7 +884,7 @@ if /i "!sys_lang!"=="zh" (
     set "str_history_title=Query History"
     set "str_history_empty=No query history yet"
     set "str_history_prompt=Enter index to re-query (q=back to main): "
-    set "str_hint_bar=[e]export  [h]history  [q]quit  [index/name]query"
+    set "str_hint_bar=[e]export  [h]history  [q]quit  [/keyword]fuzzy  [index/name]query"
     set "str_progress_done=Done"
 )
 goto :eof
@@ -1012,4 +1050,247 @@ if !hist_count! geq 10 (
 set /a hist_count+=1
 set "hist_name_!hist_count!=!hist_new_name!"
 set "hist_pwd_!hist_count!=!hist_new_pwd!"
+goto :eof
+
+REM ============================================================
+REM Subroutine: Fuzzy search WiFi profiles (/keyword)
+REM Case-insensitive substring, multi-token AND semantics:
+REM "/home 5g" matches "HomeWiFi-5G".
+REM Inputs:  !input! (already set, starting with "/")
+REM          !wifi_count! and wifi_name_!i! arrays
+REM Outputs: search_match_count and search_match_N (1-based positions)
+REM          wifi_name (set to original SSID on match+select;
+REM          cleared on no-match / cancel so caller can detect)
+REM ============================================================
+:do_fuzzy_search
+set "search_term=!input:~1!"
+REM Trim leading/trailing spaces from the term
+for /f "tokens=*" %%t in ("!search_term!") do set "search_term=%%t"
+set "search_match_count=0"
+for /l %%i in (1,1,!wifi_count!) do (
+    set "match_all=1"
+    for %%t in (!search_term!) do (
+        if !match_all!==1 (
+            echo !wifi_name_%%i!| findstr /i /c:"%%t" >nul 2>&1
+            if errorlevel 1 set "match_all=0"
+        )
+    )
+    if !match_all!==1 (
+        set /a search_match_count+=1
+        set "search_match_!search_match_count!=%%i"
+    )
+)
+if !search_match_count!==0 (
+    echo.
+    echo   !c_hint!!str_search_no_match!!c_reset!
+    timeout /t 2 >nul
+    set "wifi_name="
+    goto :eof
+)
+echo.
+echo   !c_hint!!str_search_matches!: "!search_term!"!c_reset!
+echo   ---------------------------------
+for /l %%j in (1,1,!search_match_count!) do (
+    call set "orig_idx=%%search_match_%%j%%"
+    set "idx_str=%%j"
+    if %%j lss 10 set "idx_str=0%%j"
+    call echo     !idx_str!. !c_name!%%wifi_name_!orig_idx!%%!c_reset!
+)
+echo   ---------------------------------
+set "sel_input="
+set /p "sel_input=!str_search_select!"
+if "!sel_input!"=="" (
+    set "wifi_name="
+    goto :eof
+)
+REM Validate: must be a positive integer within range
+set "sel_is_num=0"
+for /f "delims=0123456789" %%d in ("!sel_input!") do set "sel_is_num=1"
+if "!sel_is_num!"=="1" (
+    echo !str_search_invalid!
+    timeout /t 2 >nul
+    set "wifi_name="
+    goto :eof
+)
+if !sel_input! lss 1 (
+    echo !str_search_invalid!
+    timeout /t 2 >nul
+    set "wifi_name="
+    goto :eof
+)
+if !sel_input! gtr !search_match_count! (
+    echo !str_search_invalid!
+    timeout /t 2 >nul
+    set "wifi_name="
+    goto :eof
+)
+call set "orig_idx=%%search_match_!sel_input!%%"
+call set "wifi_name=%%wifi_name_!orig_idx!%%"
+goto :eof
+
+REM ============================================================
+REM Subroutine: Password strength scoring (0-5)
+REM Inputs:  str_strength_pwd, str_strength_ssid
+REM Outputs: str_strength_score (0-5), str_strength_label, str_strength_color
+REM Aligned with the Go version's logic.
+REM ============================================================
+:password_strength
+set "pwd=!str_strength_pwd!"
+set "ssid=!str_strength_ssid!"
+set "score=0"
+
+if "!pwd!"=="" (
+    set "str_strength_score=0"
+    set "str_strength_label=!str_strength_empty!"
+    set "str_strength_color=!c_hint!"
+    goto :eof
+)
+
+REM --- Length tier (substring existence check, O(32) max) ---
+set "pwd_len=0"
+for /l %%i in (1,1,32) do (
+    if not "!pwd:~%%i,1!"=="" set /a pwd_len=%%i
+)
+if !pwd_len! geq 12 (
+    set /a score+=2
+) else if !pwd_len! geq 8 (
+    set /a score+=1
+) else (
+    set /a score-=1
+)
+
+REM --- Character classes ---
+set "has_lower=0"
+set "has_upper=0"
+set "has_digit=0"
+set "has_special=0"
+for /l %%i in (0,1,31) do (
+    set "ch=!pwd:~%%i,1!"
+    if "!ch!"=="" goto :break_chars
+    if "!ch!" geq "a" if "!ch!" leq "z" (
+        set "has_lower=1"
+    ) else if "!ch!" geq "A" if "!ch!" leq "Z" (
+        set "has_upper=1"
+    ) else if "!ch!" geq "0" if "!ch!" leq "9" (
+        set "has_digit=1"
+    ) else (
+        set "has_special=1"
+    )
+)
+:break_chars
+set /a class_count=has_lower+has_upper+has_digit+has_special
+if !class_count! geq 3 (
+    set /a score+=2
+) else if !class_count! geq 2 (
+    set /a score+=1
+)
+
+REM --- Common password penalty (matches Go version's list) ---
+if /i "!pwd!"=="password" set /a score-=4
+if /i "!pwd!"=="passw0rd" set /a score-=4
+if /i "!pwd!"=="p@ssw0rd" set /a score-=4
+if /i "!pwd!"=="12345678" set /a score-=4
+if /i "!pwd!"=="123456789" set /a score-=4
+if /i "!pwd!"=="1234567890" set /a score-=4
+if /i "!pwd!"=="qwerty" set /a score-=4
+if /i "!pwd!"=="qwertyuiop" set /a score-=4
+if /i "!pwd!"=="asdfgh" set /a score-=4
+if /i "!pwd!"=="zxcvbn" set /a score-=4
+if /i "!pwd!"=="abc123" set /a score-=4
+if /i "!pwd!"=="111111" set /a score-=4
+if /i "!pwd!"=="1234567" set /a score-=4
+if /i "!pwd!"=="iloveyou" set /a score-=4
+if /i "!pwd!"=="admin" set /a score-=4
+if /i "!pwd!"=="welcome" set /a score-=4
+if /i "!pwd!"=="monkey" set /a score-=4
+if /i "!pwd!"=="letmein" set /a score-=4
+if /i "!pwd!"=="dragon" set /a score-=4
+if /i "!pwd!"=="master" set /a score-=4
+if /i "!pwd!"=="login" set /a score-=4
+if /i "!pwd!"=="princess" set /a score-=4
+if /i "!pwd!"=="football" set /a score-=4
+if /i "!pwd!"=="88888888" set /a score-=4
+if /i "!pwd!"=="666666" set /a score-=4
+if /i "!pwd!"=="woaini" set /a score-=4
+if /i "!pwd!"=="5201314" set /a score-=4
+if /i "!pwd!"=="a1b2c3" set /a score-=4
+if /i "!pwd!"=="abcd1234" set /a score-=4
+
+REM --- SSID substring penalty (only if SSID >= 3 chars) ---
+if not "!ssid!"=="" if not "!ssid:~2,1!"=="" (
+    echo !pwd!| findstr /i /c:"!ssid!" >nul 2>&1
+    if not errorlevel 1 set /a score-=2
+)
+
+REM --- Sequential chars penalty (any 4+ digit/letter run) ---
+echo !pwd!| findstr /i /c:"1234" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"2345" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"3456" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"4567" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"5678" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"6789" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"abcd" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"bcde" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"cdef" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"defg" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+echo !pwd!| findstr /i /c:"wxyz" >nul 2>&1
+if not errorlevel 1 set /a score-=2
+
+REM --- Repeated chars penalty (3+ consecutive identical) ---
+set "rep_found=0"
+for %%c in (a b c d e f g h i j k l m n o p q r s t u v w x y z 0 1 2 3 4 5 6 7 8 9) do (
+    if !rep_found!==0 (
+        if not "!pwd:%%c%%c%%c=!"=="!pwd!" set "rep_found=1"
+    )
+)
+if !rep_found!==1 set /a score-=1
+
+REM --- Clamp 0-5 ---
+if !score! lss 0 set "score=0"
+if !score! gtr 5 set "score=5"
+
+REM --- Output ---
+set "str_strength_score=!score!"
+if !score! leq 1 (
+    set "str_strength_label=!str_strength_weak!"
+    set "str_strength_color=!c_error!"
+) else if !score! leq 3 (
+    set "str_strength_label=!str_strength_medium!"
+    set "str_strength_color=!c_warn!"
+) else (
+    set "str_strength_label=!str_strength_strong!"
+    set "str_strength_color=!c_ok!"
+)
+goto :eof
+
+REM ============================================================
+REM Subroutine: Build visual strength bar (█ filled / ░ empty)
+REM Inputs:  str_strength_score, bar_max
+REM Outputs: str_strength_bar (colored bar with reset)
+REM ============================================================
+:build_strength_bar
+set "filled=!str_strength_score!"
+if !filled! lss 0 set "filled=0"
+if !filled! gtr !bar_max! set "filled=!bar_max!"
+set /a empty=bar_max-filled
+
+if !str_strength_score! leq 1 set "bar_color=!c_error!"
+if !str_strength_score! gtr 1 if !str_strength_score! leq 3 set "bar_color=!c_warn!"
+if !str_strength_score! geq 4 set "bar_color=!c_ok!"
+
+set "str_strength_bar=!bar_color!"
+for /l %%i in (1,1,!filled!) do set "str_strength_bar=!str_strength_bar!█"
+set "str_strength_bar=!str_strength_bar!!c_bar_empty!"
+for /l %%i in (1,1,!empty!) do set "str_strength_bar=!str_strength_bar!░"
+set "str_strength_bar=!str_strength_bar!!c_reset!"
 goto :eof

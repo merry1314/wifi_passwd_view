@@ -44,8 +44,10 @@ go build -o wifi_password_tool.exe
 
 - 🔍 查看所有已保存的 WiFi 配置（带序号）/ View all saved WiFi configurations (with index)
 - 🔢 按序号或名称快速查询 / Quick query by index or name
+- 🔎 **模糊搜索**（`/关键词`，多 token AND，大小写无关）/ Fuzzy search (`/keyword`, multi-token AND, case-insensitive)
 - 🔐 自动复制密码到剪贴板 / Auto-copy password to clipboard
-- 🤖 自动识别系统语言（zh/en/ja/ko/de/fr/ru/es/it/pt/pl/nl/tr/ar/he/cs/hu/sv/fi/da/no，共 21 种 UI；18 种 netsh 输出解析）
+- 📊 **密码强度评分**（0-5 分，含黑名单/连续/重复字符检测）/ Password strength meter (0-5, with blacklist/sequential/repeat detection)
+- 🤖 自动识别系统语言（zh/en/ja/ko/de/fr/ru/es/it/pt/pl/nl/tr/ar/he/cs/hu/sv/fi/da/no，共 21 种 UI；21 种 netsh 输出解析）
 - 📤 批量导出 TXT / CSV（含 UTF-8 BOM，Excel 直接打开）/ Batch export TXT / CSV (UTF-8 BOM, Excel-compatible)
 - 📱 复制 WiFi 连接字符串（手机相机扫码即可连接）/ Copy WiFi connect string (scan to connect)
 - 📊 实时进度条 / Real-time progress bar
@@ -74,14 +76,17 @@ wifi_passwd_view/
 ├── README.md                              ← 本文件 / this file
 ├── LICENSE                                ← MIT
 ├── bat-wifi-view/                         ← BAT 实现 / BAT edition
-│   ├── wifi_password_tool_auto.bat        ← 唯一入口（v3.0 统一版）/ sole entry (v3.0 unified)
+│   ├── wifi_password_tool_auto.bat        ← 唯一入口（v3.1，统一版+模糊搜索+密码强度）/ sole entry (v3.1 unified + fuzzy + strength)
 │   ├── WiFi密码查询工具使用说明.md
-│   └── WiFi_Password_Query_Tool_Manual.md
+│   ├── WiFi_Password_Query_Tool_Manual.md
+│   └── Language_Support.md                ← 语言支持总览（21 种 UI / netsh）/ Language overview (21 UI / netsh)
 └── go-wifi-view/                          ← Go 实现 / Go edition
     ├── main.go
+    ├── main_test.go
     ├── go.mod
     ├── go.sum
-    └── README.md                          ← Go 版使用说明 / Go edition docs
+    ├── README.md                          ← Go 版使用说明 / Go edition docs
+    └── Language_Support.md                ← 语言支持总览（同上）/ Language overview (same)
 ```
 
 ## 常见问题 / FAQ
