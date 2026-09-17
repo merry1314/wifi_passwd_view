@@ -68,6 +68,7 @@ var pwdKeywords = []string{
 	"Содержимое ключа", "Conteúdo da chave", "Contenuto della chiave",
 	"Zawartosc klucza", "Sleutelinhoud", "키 콘텐츠", "Anahtar Içerigi",
 	"Kulcstartalom", "Nyckelinnehall", "Avaimen sisalto", "Nøgleindhold",
+	"Nøkkelinnhold",
 }
 
 var profileTypeKeywords = []string{

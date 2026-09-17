@@ -203,6 +203,7 @@ for /f "usebackq tokens=*" %%i in (`netsh wlan show profile name^="!wifi_name!" 
     if not "!line:Nyckelinnehall=!"=="!line!" set "is_key=1"
     if not "!line:Avaimen sisalto=!"=="!line!" set "is_key=1"
     if not "!line:Nøgleindhold=!"=="!line!" set "is_key=1"
+    if not "!line:Nøkkelinnhold=!"=="!line!" set "is_key=1"
     if not defined is_key (
         echo "!line!"| findstr /i /c:"key" >nul && echo "!line!"| findstr /i /c:"content" >nul && set "is_key=1"
     )
@@ -546,6 +547,7 @@ for /l %%n in (1,1,!wifi_count!) do (
             if not "!line:Nyckelinnehall=!"=="!line!" set "is_key=1"
             if not "!line:Avaimen sisalto=!"=="!line!" set "is_key=1"
             if not "!line:Nøgleindhold=!"=="!line!" set "is_key=1"
+            if not "!line:Nøkkelinnhold=!"=="!line!" set "is_key=1"
             if not defined is_key (
                 echo "!line!"| findstr /i /c:"key" >nul && echo "!line!"| findstr /i /c:"content" >nul && set "is_key=1"
             )
