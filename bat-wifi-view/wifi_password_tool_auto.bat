@@ -22,7 +22,7 @@ REM --- Unicode separator line (44 chars, light horizontal) ---
 set "str_sep=────────────────────────────────────────────"
 
 REM ============================================================
-REM  WiFi Password Query Tool v3.0 - Auto Language Detection
+REM  WiFi Password Query Tool v3.1 - Auto Language Detection
 REM  Auto-detect system language, dynamic netsh keyword matching
 REM  Supports Chinese/English UI, multi-language netsh parsing
 REM
@@ -503,7 +503,7 @@ if "!export_format!"=="csv" (
     echo !str_sep! >> "!outfile!"
     echo.  >> "!outfile!"
     echo !str_export_time!: %date% %time% >> "!outfile!"
-    echo !str_tool_version!: WiFi Password Query Tool v3.0 >> "!outfile!"
+    echo !str_tool_version!: !str_title! v3.1 >> "!outfile!"
     echo !str_total_count!: !export_total! >> "!outfile!"
     echo.  >> "!outfile!"
     echo !str_sep! >> "!outfile!"
