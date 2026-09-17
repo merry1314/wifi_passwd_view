@@ -2,6 +2,24 @@
 setlocal enabledelayedexpansion
 chcp 65001 >nul
 
+REM --- Define ESC character for ANSI color codes ---
+for /f %%a in ('"prompt $E$S & echo on & for %%b in (1) do rem"') do set "ESC=%%a"
+
+REM --- ANSI color codes ---
+set "c_reset=!ESC![0m"
+set "c_bold=!ESC![1m"
+set "c_title=!ESC![36m"
+set "c_ok=!ESC![32m"
+set "c_error=!ESC![31m"
+set "c_name=!ESC![33m"
+set "c_pwd=!ESC![97m"
+set "c_hint=!ESC![90m"
+set "c_bar_fill=!ESC![32m"
+set "c_bar_empty=!ESC![90m"
+
+REM --- Unicode separator line (44 chars, light horizontal) ---
+set "str_sep=────────────────────────────────────────────"
+
 REM ============================================================
 REM  WiFi Password Query Tool v3.0 - Auto Language Detection
 REM  Auto-detect system language, dynamic netsh keyword matching
@@ -24,7 +42,7 @@ REM --- Step 2: Load language strings ---
 call :load_strings
 
 title !str_title!
-color 0A
+color 0F
 
 REM --- Step 3: Check admin privileges ---
 net session >nul 2>&1
@@ -38,15 +56,18 @@ if %errorLevel% neq 0 (
 
 cls
 
+REM Initialize query history
+set "hist_count=0"
+
 :main
 REM Clear previous WiFi array variables to avoid pollution
 for /f "tokens=1 delims==" %%v in ('set wifi_name_ 2^>nul') do set "%%v="
 
 echo.
-echo ============================================
-echo            !str_title!
-echo            !str_lang_info!
-echo ============================================
+echo !str_sep!
+echo           !c_title!!str_title!!c_reset!
+echo           !c_hint!!str_lang_info!!c_reset!
+echo !str_sep!
 
 REM --- Parse WiFi profiles using dynamic matching ---
 REM Strategy: extract text after last ":" as WiFi name
@@ -63,38 +84,35 @@ for /f "usebackq tokens=1,* delims=:" %%a in (`netsh wlan show profiles 2^>nul`)
     )
 )
 
-REM --- Display WiFi list ---
+REM --- Display WiFi list (compact format) ---
 echo.
-echo !str_profiles_on_interface!
+echo   !str_profiles_on_interface!
 echo.
-echo !str_group_policy!
-echo ---------------------------------
+echo   [!str_group_policy!]
+echo   ---------------------------------
 echo     ^<!str_none!^>
 echo.
-echo !str_user_profiles!
-echo -------------
+echo   [!str_user_profiles!]
+echo   ---------------------------------
 if !wifi_count! equ 0 (
     echo     ^<!str_none!^>
 ) else (
     for /l %%i in (1,1,!wifi_count!) do (
-        set "idx=%%i"
-        if !idx! lss 10 (
-            echo     !idx!. !str_profile_type! : !wifi_name_%%i!
-        ) else if !idx! lss 100 (
-            echo    !idx!. !str_profile_type! : !wifi_name_%%i!
-        ) else (
-            echo   !idx!. !str_profile_type! : !wifi_name_%%i!
-        )
+        set "idx_str=%%i"
+        if %%i lss 10 set "idx_str=0%%i"
+        echo     !idx_str!. !c_name!!wifi_name_%%i!!c_reset!
     )
 )
 
 echo.
+echo   !c_hint!!str_hint_bar!!c_reset!
 echo.
 set "input="
 set /p "input=!str_input_prompt!"
 
 if /i "!input!"=="q" goto exit
 if /i "!input!"=="e" goto export_all
+if /i "!input!"=="h" goto show_history
 
 set "wifi_name="
 REM Check if input is a numeric index
@@ -129,6 +147,7 @@ if "!wifi_name!"==" " (
 )
 
 REM Check if WiFi profile exists
+:do_query
 netsh wlan show profile name="%wifi_name%" >nul 2>&1
 if %errorLevel% neq 0 (
     echo.
@@ -139,11 +158,11 @@ if %errorLevel% neq 0 (
 )
 
 echo.
-echo ============================================
-echo              !str_query_result!
-echo ============================================
+echo !str_sep!
+echo              !c_title!!str_query_result!!c_reset!
+echo !str_sep!
 echo.
-echo !str_searching!
+echo   !c_hint!^>^> !str_searching!!c_reset!
 echo.
 
 REM --- Extract password using dynamic keyword matching ---
@@ -180,15 +199,10 @@ for /f "usebackq tokens=*" %%i in (`netsh wlan show profile name^="%wifi_name%" 
             if not "!password!"=="" (
                 set "last_wifi_name=!wifi_name!"
                 set "last_wifi_password=!password!"
-                echo.
-                echo ============================================
-                echo !str_wifi_name! %wifi_name%
-                echo !str_wifi_password! !password!
-                echo ============================================
+                set "show_password=1"
+                call :add_history "!wifi_name!" "!password!"
                 echo !password!| clip
-                echo.
-                echo !str_copied!
-                goto :main_menu
+                goto :display_result
             )
         )
     )
@@ -200,19 +214,91 @@ set "wifi_name="
 timeout /t 4 >nul
 goto main
 
+:display_result
+echo.
+echo !str_sep!
+echo   !str_wifi_name! !c_name!!last_wifi_name!!c_reset!
+if "!show_password!"=="1" (
+    echo   !str_wifi_password! !c_pwd!!last_wifi_password!!c_reset!
+) else (
+    echo   !str_wifi_password! !c_hint!!str_password_masked!!c_reset!
+)
+echo !str_sep!
+echo.
+echo   !c_ok![OK]!c_reset! !str_copied!
+goto :main_menu
+
 :main_menu
 echo.
-echo ============================================
-echo 1. !str_menu_continue!
-echo 2. !str_menu_export!
-echo 3. !str_menu_qr!
-echo 4. !str_menu_exit!
-echo ============================================
-choice /c 1234 /m "!str_select_option!"
-if errorlevel 4 goto exit
+echo !str_sep!
+echo   1) !str_menu_continue!
+echo   2) !str_menu_export!
+echo   3) !str_menu_qr!
+echo   4) !str_menu_toggle!
+echo   5) !str_menu_history!
+echo   6) !str_menu_exit!
+echo !str_sep!
+choice /c 123456 /n /m "  ^>^> !str_select_option! [1-6]: "
+if errorlevel 6 goto exit
+if errorlevel 5 goto show_history
+if errorlevel 4 goto toggle_password
 if errorlevel 3 goto copy_wifi_string
 if errorlevel 2 goto export_current
 if errorlevel 1 goto main
+
+:toggle_password
+if "!show_password!"=="1" (
+    set "show_password=0"
+) else (
+    set "show_password=1"
+)
+cls
+echo.
+echo !str_sep!
+echo           !c_title!!str_title!!c_reset!
+echo           !c_hint!!str_lang_info!!c_reset!
+echo !str_sep!
+goto :display_result
+
+:show_history
+echo.
+echo !str_sep!
+echo   !c_title!!str_history_title!!c_reset!
+echo !str_sep!
+if !hist_count! equ 0 (
+    echo   !str_history_empty!
+    echo !str_sep!
+    timeout /t 3 >nul
+    if defined last_wifi_password (
+        goto main_menu
+    ) else (
+        goto main
+    )
+)
+for /l %%i in (1,1,!hist_count!) do (
+    set "idx_str=%%i"
+    if %%i lss 10 set "idx_str=0%%i"
+    echo   !idx_str!. !c_name!!hist_name_%%i!!c_reset!  [!c_pwd!!hist_pwd_%%i!!c_reset!]
+)
+echo !str_sep!
+set "hist_input="
+set /p "hist_input=!str_history_prompt!"
+if /i "!hist_input!"=="q" (
+    if defined last_wifi_password (
+        goto main_menu
+    ) else (
+        goto main
+    )
+)
+set "is_num=0"
+for /f "delims=0123456789" %%d in ("!hist_input!") do set "is_num=1"
+if "!is_num!"=="0" if not "!hist_input!"=="" (
+    if !hist_input! geq 1 if !hist_input! leq !hist_count! (
+        call set "wifi_name=%%hist_name_!hist_input!%%"
+        goto do_query
+    )
+)
+goto main
 
 REM --- Export only the currently queried WiFi (from main_menu option 2) ---
 :export_current
@@ -260,29 +346,31 @@ set "qr_pwd=!qr_pwd:;=\;!"
 set "qr_pwd=!qr_pwd:,=\,!"
 set "qr_pwd=!qr_pwd::=\:!"
 set "wifi_qr_string=WIFI:T:WPA;S:!qr_ssid!;P:!qr_pwd!;;"
-echo ============================================
-echo !str_qr_full!
+echo !str_sep!
+echo   !c_title!!str_qr_full!!c_reset!
+echo !str_sep!
 echo.
-echo !wifi_qr_string!
-echo ============================================
+echo   !c_pwd!!wifi_qr_string!!c_reset!
 echo.
+echo !str_sep!
 echo !wifi_qr_string!| clip
-echo !str_qr_copied!
+echo   !c_ok![OK]!c_reset! !str_qr_copied!
 echo.
-echo 1. !str_menu_continue!
-echo 2. !str_menu_qr!
-echo 3. !str_menu_exit!
-echo ============================================
-choice /c 123 /m "!str_select_option!"
+echo !str_sep!
+echo   1) !str_menu_continue!
+echo   2) !str_menu_qr!
+echo   3) !str_menu_exit!
+echo !str_sep!
+choice /c 123 /n /m "  ^>^> !str_select_option! [1-3]: "
 if errorlevel 3 goto exit
 if errorlevel 2 goto copy_wifi_string
 if errorlevel 1 goto main
 
 :export_all
 echo.
-echo ============================================
-echo        !str_export_title!
-echo ============================================
+echo !str_sep!
+echo        !c_title!!str_export_title!!c_reset!
+echo !str_sep!
 if !wifi_count! equ 0 (
     echo.
     echo !str_err_no_export!
@@ -291,15 +379,15 @@ if !wifi_count! equ 0 (
 )
 
 echo.
-echo !str_lang_info!
+echo   !str_lang_info!
 echo.
 echo !str_export_scope_title!
-echo ============================================
-echo 1. !str_scope_all!
-echo 2. !str_scope_selected!
-echo 0. !str_scope_cancel!
-echo ============================================
-choice /c 120 /m "!str_select_option!"
+echo !str_sep!
+echo   1) !str_scope_all!
+echo   2) !str_scope_selected!
+echo   0) !str_scope_cancel!
+echo !str_sep!
+choice /c 120 /n /m "  ^>^> !str_select_option! [0-2]: "
 if errorlevel 3 goto main
 if errorlevel 2 goto export_scope_selected
 if errorlevel 1 goto export_scope_all
@@ -332,13 +420,17 @@ goto export_format_choose
 
 :export_format_choose
 echo.
+if "!export_mode!"=="selected" if "!current_idx!" neq "0" (
+    echo   !str_current_selection! !last_wifi_name!
+    echo.
+)
 echo !str_export_format_title!
-echo ============================================
-echo 1. !str_format_txt!
-echo 2. !str_format_csv!
-echo 0. !str_format_cancel!
-echo ============================================
-choice /c 120 /m "!str_select_option!"
+echo !str_sep!
+echo   1) !str_format_txt!
+echo   2) !str_format_csv!
+echo   0) !str_format_cancel!
+echo !str_sep!
+choice /c 120 /n /m "  ^>^> !str_select_option! [0-2]: "
 if errorlevel 3 goto main
 if errorlevel 2 goto do_export_csv
 if errorlevel 1 goto do_export_txt
@@ -375,17 +467,17 @@ if "!export_format!"=="csv" (
 ) else (
     set "outfile=%~dp0!str_export_filename!!datestamp!_!timestamp!.txt"
     REM Write TXT file header
-    echo ============================================================ > "!outfile!"
+    echo !str_sep! > "!outfile!"
     echo               !str_export_report_title!                          >> "!outfile!"
-    echo ============================================================ >> "!outfile!"
+    echo !str_sep! >> "!outfile!"
     echo.  >> "!outfile!"
     echo !str_export_time!: %date% %time% >> "!outfile!"
     echo !str_tool_version!: WiFi Password Query Tool v3.0 >> "!outfile!"
     echo !str_total_count!: !export_total! >> "!outfile!"
     echo.  >> "!outfile!"
-    echo ============================================================ >> "!outfile!"
+    echo !str_sep! >> "!outfile!"
     echo !str_col_index!   !str_col_name!                             !str_col_password!   >> "!outfile!"
-    echo ============================================================ >> "!outfile!"
+    echo !str_sep! >> "!outfile!"
 )
 
 echo.
@@ -435,17 +527,18 @@ for /l %%n in (1,1,!wifi_count!) do (
         )
 
         set /a export_processed+=1
+        call :build_progress_bar !export_processed! !export_total!
 
         if "!export_format!"=="csv" (
             REM CSV output: index,name,password
             if "!cur_pwd!"=="" (
                 set /a exported_none+=1
                 echo %%n,!cur_name!,>> "!outfile!"
-                echo [!export_processed!/!export_total!] !cur_name!  -^>  ^<!str_no_password!^>
+                echo !progress_bar! !cur_name!  -^>  ^<!str_no_password!^>
             ) else (
                 set /a exported_ok+=1
                 echo %%n,!cur_name!,!cur_pwd!>> "!outfile!"
-                echo [!export_processed!/!export_total!] !cur_name!  -^>  !cur_pwd!
+                echo !progress_bar! !cur_name!  -^>  !cur_pwd!
             )
         ) else (
             REM TXT output: aligned table format
@@ -459,11 +552,11 @@ for /l %%n in (1,1,!wifi_count!) do (
             if "!cur_pwd!"=="" (
                 set /a exported_none+=1
                 echo !idx_str!.  !name_pad! ^<!str_no_password!^> >> "!outfile!"
-                echo [!export_processed!/!export_total!] !cur_name!  -^>  ^<!str_no_password!^>
+                echo !progress_bar! !cur_name!  -^>  ^<!str_no_password!^>
             ) else (
                 set /a exported_ok+=1
                 echo !idx_str!.  !name_pad! !cur_pwd! >> "!outfile!"
-                echo [!export_processed!/!export_total!] !cur_name!  -^>  !cur_pwd!
+                echo !progress_bar! !cur_name!  -^>  !cur_pwd!
             )
         )
     )
@@ -472,18 +565,19 @@ for /l %%n in (1,1,!wifi_count!) do (
 REM TXT footer with stats (CSV keeps plain columns)
 if not "!export_format!"=="csv" (
     echo. >> "!outfile!"
-    echo ============================================================ >> "!outfile!"
+    echo !str_sep! >> "!outfile!"
     echo !str_export_stats!: !str_stats_success! !exported_ok! / !str_stats_none! !exported_none! / !str_stats_total! !export_total! >> "!outfile!"
-    echo ============================================================ >> "!outfile!"
+    echo !str_sep! >> "!outfile!"
 )
 
 echo.
-echo ============================================
-echo !str_export_complete!
-echo   !str_file_location! - !outfile!
-echo   !str_success_count!   - !exported_ok!
-echo   !str_no_password_count!   - !exported_none!
-echo ============================================
+echo !str_sep!
+echo   !c_ok![OK]!c_reset! !str_export_complete!
+echo !str_sep!
+echo   !str_file_location! : !outfile!
+echo   !str_success_count!       : !exported_ok!
+echo   !str_no_password_count!   : !exported_none!
+echo !str_sep!
 echo.
 pause
 goto main
@@ -493,6 +587,22 @@ echo.
 echo !str_exiting!
 timeout /t 2 >nul
 exit /b 0
+
+REM ============================================================
+REM Subroutine: Build progress bar string
+REM Args: %1 = processed count, %2 = total count
+REM Output: progress_bar variable (e.g., "[██████░░░░] 60%")
+REM ============================================================
+:build_progress_bar
+set /a pct=0
+if %2 gtr 0 set /a pct=%1*100/%2
+set /a bar_filled=pct/10
+set /a bar_empty=10-bar_filled
+set "progress_bar="
+for /l %%i in (1,1,!bar_filled!) do set "progress_bar=!progress_bar!█"
+for /l %%i in (1,1,!bar_empty!) do set "progress_bar=!progress_bar!░"
+set "progress_bar=!c_bar_fill![!progress_bar!]!c_reset! !pct!%%"
+goto :eof
 
 REM ============================================================
 REM Subroutine: Detect system language
@@ -602,7 +712,7 @@ if /i "!sys_lang!"=="zh" (
     set "str_select_option=请选择操作"
     set "str_qr_full=WiFi连接字符串（手机相机扫码即可连接）"
     set "str_qr_copied=[连接字符串已复制到剪贴板]"
-    set "str_err_no_wifi=错误：请先查询WiFi密码！"
+    set "str_err_no_wifi=!c_error![ERROR]!c_reset! 请先查询WiFi密码！"
     set "str_csv_file=另存 CSV 文件 -"
     set "str_export_format_title=请选择导出格式："
     set "str_format_txt=导出为 TXT 文本文件"
@@ -614,7 +724,8 @@ if /i "!sys_lang!"=="zh" (
     set "str_scope_cancel=取消，返回主菜单"
     set "str_input_indices=请输入要导出的编号（多个用逗号分隔，如 1,3,5）："
     set "str_invalid_num=无效编号，已跳过："
-    set "str_err_no_selection=错误：未选择有效的编号！"
+    set "str_err_no_selection=!c_error![ERROR]!c_reset! 未选择有效的编号！"
+    set "str_current_selection=当前选择:"
     set "str_export_title=批量导出WiFi密码"
     set "str_export_filename=WiFi密码导出_"
     set "str_output_file=导出文件路径 -"
@@ -637,12 +748,20 @@ if /i "!sys_lang!"=="zh" (
     set "str_success_count=成功导出"
     set "str_no_password_count=无密码"
     set "str_exiting=正在退出WiFi密码查询工具..."
-    set "str_err_admin=请以管理员身份运行此脚本！"
+    set "str_err_admin=!c_error![ERROR]!c_reset! 请以管理员身份运行此脚本！"
     set "str_press_exit=按任意键退出..."
-    set "str_err_no_input=错误：没有输入WiFi名称！"
-    set "str_err_not_found=错误：找不到该WiFi配置文件！"
-    set "str_err_no_password=错误：无法获取密码信息，可能是该WiFi没有保存密码。"
-    set "str_err_no_export=错误：当前没有可导出的WiFi配置！"
+    set "str_err_no_input=!c_error![ERROR]!c_reset! 没有输入WiFi名称！"
+    set "str_err_not_found=!c_error![ERROR]!c_reset! 找不到该WiFi配置文件！"
+    set "str_err_no_password=!c_error![ERROR]!c_reset! 无法获取密码信息，可能是该WiFi没有保存密码。"
+    set "str_err_no_export=!c_error![ERROR]!c_reset! 当前没有可导出的WiFi配置！"
+    set "str_menu_toggle=显示/隐藏密码 (R)"
+    set "str_password_masked=********（已隐藏，按R切换显示）"
+    set "str_menu_history=查看查询历史 (H)"
+    set "str_history_title=查询历史记录"
+    set "str_history_empty=暂无查询历史"
+    set "str_history_prompt=输入序号可快速重新查询（q返回主菜单）："
+    set "str_hint_bar=[e]导出  [h]历史  [q]退出  [序号/名称]查询"
+    set "str_progress_done=完成"
 ) else (
     set "str_title=WiFi Password Query Tool"
     set "str_lang_info=[Auto-detected: English / !sys_lang_full!]"
@@ -664,7 +783,7 @@ if /i "!sys_lang!"=="zh" (
     set "str_select_option=Please select an option"
     set "str_qr_full=WiFi connect string (scan with phone camera to connect)"
     set "str_qr_copied=[Connect string copied to clipboard]"
-    set "str_err_no_wifi=Error: Please query a WiFi password first!"
+    set "str_err_no_wifi=!c_error![ERROR]!c_reset! Please query a WiFi password first!"
     set "str_csv_file=CSV file also saved -"
     set "str_export_format_title=Select export format:"
     set "str_format_txt=Export as TXT text file"
@@ -676,7 +795,8 @@ if /i "!sys_lang!"=="zh" (
     set "str_scope_cancel=Cancel, back to main menu"
     set "str_input_indices=Enter indices to export (comma separated, e.g. 1,3,5): "
     set "str_invalid_num=Invalid index, skipped:"
-    set "str_err_no_selection=Error: No valid index selected!"
+    set "str_err_no_selection=!c_error![ERROR]!c_reset! No valid index selected!"
+    set "str_current_selection=Current selection:"
     set "str_export_title=Batch Export WiFi Passwords"
     set "str_export_filename=WiFi_Passwords_Export_"
     set "str_output_file=Output file -"
@@ -699,12 +819,20 @@ if /i "!sys_lang!"=="zh" (
     set "str_success_count=Success"
     set "str_no_password_count=No password"
     set "str_exiting=Exiting WiFi Password Query Tool..."
-    set "str_err_admin=Please run this script as Administrator!"
+    set "str_err_admin=!c_error![ERROR]!c_reset! Please run this script as Administrator!"
     set "str_press_exit=Press any key to exit..."
-    set "str_err_no_input=Error: No WiFi name entered!"
-    set "str_err_not_found=Error: WiFi profile not found!"
-    set "str_err_no_password=Error: Unable to retrieve password information. This WiFi may not have a saved password."
-    set "str_err_no_export=Error: No WiFi configurations available to export!"
+    set "str_err_no_input=!c_error![ERROR]!c_reset! No WiFi name entered!"
+    set "str_err_not_found=!c_error![ERROR]!c_reset! WiFi profile not found!"
+    set "str_err_no_password=!c_error![ERROR]!c_reset! Unable to retrieve password information. This WiFi may not have a saved password."
+    set "str_err_no_export=!c_error![ERROR]!c_reset! No WiFi configurations available to export!"
+    set "str_menu_toggle=Show/Hide password (R)"
+    set "str_password_masked=******** (hidden, press R to show)"
+    set "str_menu_history=View query history (H)"
+    set "str_history_title=Query History"
+    set "str_history_empty=No query history yet"
+    set "str_history_prompt=Enter index to re-query (q=back to main): "
+    set "str_hint_bar=[e]export  [h]history  [q]quit  [index/name]query"
+    set "str_progress_done=Done"
 )
 goto :eof
 
@@ -818,4 +946,30 @@ set "seg=!seg_next!"
 goto :extract_loop
 :extract_done
 for /f "tokens=* delims= " %%x in ("!seg!") do set "extracted_name=%%x"
+goto :eof
+REM ============================================================
+REM Subroutine: Add entry to query history
+REM Args: %1 = WiFi name, %2 = password
+REM Keeps last 10 entries, skips consecutive duplicates
+REM ============================================================
+:add_history
+set "hist_new_name=%~1"
+set "hist_new_pwd=%~2"
+REM Skip if same as most recent entry
+if !hist_count! gtr 0 (
+    call set "hist_last=%%hist_name_!hist_count!%%"
+    if /i "!hist_last!"=="!hist_new_name!" goto :eof
+)
+REM If at max capacity, shift entries (drop oldest)
+if !hist_count! geq 10 (
+    for /l %%i in (1,1,9) do (
+        set /a next=%%i+1
+        call set "hist_name_%%i=%%hist_name_!next!%%"
+        call set "hist_pwd_%%i=%%hist_pwd_!next!%%"
+    )
+    set "hist_count=9"
+)
+set /a hist_count+=1
+set "hist_name_!hist_count!=!hist_new_name!"
+set "hist_pwd_!hist_count!=!hist_new_pwd!"
 goto :eof
