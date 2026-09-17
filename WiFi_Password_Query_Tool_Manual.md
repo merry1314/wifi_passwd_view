@@ -2,23 +2,37 @@
 
 ## Tool Introduction
 
-The WiFi Password Query Tool is a Windows batch-based utility that helps users quickly view saved WiFi network passwords. The tool supports both Chinese and English interfaces, with simple operation and reliable security.
+The WiFi Password Query Tool is a Windows batch-based utility that helps users quickly view saved WiFi network passwords. The tool auto-detects system language (Chinese/English UI), dynamically matches netsh output in 18 languages, with simple operation and reliable security.
 
 ## Features
 
-- ✅ Display all saved WiFi configurations (with index numbers)
+### Basic Features
+- ✅ Display all saved WiFi configurations (with index numbers, compact format)
 - ✅ Support quick selection by index, no need to manually enter WiFi name
 - ✅ Support direct WiFi name input for query
 - ✅ Query passwords for specified WiFi networks
-- ✅ One-click batch export all WiFi passwords to TXT file
 - ✅ Automatically copy passwords to clipboard
-- ✅ Support for both Chinese and English Windows systems
-- ✅ User-friendly interface with error prompts
-- ✅ Secure password display method
+- ✅ Auto-detect system language (v3.0), also supports forced language via command line (`zh`/`en`/`ja` etc.)
+- ✅ Dynamic multi-language netsh keyword matching (18 languages)
+- ✅ Secure local execution, no data uploaded
+
+### Export Features
+- ✅ Batch export WiFi passwords: choose scope (all/selected indices) and format (TXT/CSV)
+- ✅ Copy WiFi connect string (`WIFI:T:WPA;S:ssid;P:password;;` format, scannable by phone camera)
+- ✅ Real-time progress bar during export (`█░` 10 segments + percentage)
+- ✅ CSV file includes UTF-8 BOM for Excel compatibility
+
+### UI Enhancements
+- ✅ Password show/hide toggle (menu option 4)
+- ✅ Query history (up to 10 entries, quick re-query by index)
+- ✅ Quick key hint bar (`[e]export [h]history [q]quit`)
+- ✅ ANSI color highlighting (title: cyan, WiFi name: yellow, password: bright white, error: red, success: green)
+- ✅ Unicode separator lines (`─`) replacing `====` for cleaner look
 
 ## System Requirements
 
-- Windows 7/8/10/11 operating system
+- Windows 10/11 (recommended, ANSI colors need VT support)
+- Windows 7/8 (basic features work, colors may not show)
 - Administrator privileges (required)
 - Previously connected WiFi networks with saved passwords
 
@@ -27,196 +41,213 @@ The WiFi Password Query Tool is a Windows batch-based utility that helps users q
 ### 1. Download Files
 
 Download the following files to your desktop:
-- `wifi_password_tool.bat` (Chinese version)
-- `select_wifi_passwd_optimized.bat` (English version)
+- `wifi_password_tool_auto.bat` (**Recommended**, unified version, auto-detects language)
+- `wifi_password_tool.bat` (Chinese version, kept for compatibility)
+- `select_wifi_passwd_optimized.bat` (English version, kept for compatibility)
 
 ### 2. Run the Tool
 
 **Important: Must run as Administrator!**
 
-**Method 1: Right-click to run**
-1. Right-click on the script file
+**Method 1: Right-click**
+1. Right-click on `wifi_password_tool_auto.bat`
 2. Select "Run as administrator"
 
-**Method 2: Command line run**
+**Method 2: Command line**
 1. Press `Win + R` to open Run dialog
-2. Type `cmd` and hold `Ctrl + Shift` then press Enter (opens Command Prompt as administrator)
-3. Navigate to script directory:
+2. Type `cmd` and press `Ctrl + Shift + Enter` (open as administrator)
+3. Navigate to the script directory:
    ```
    cd C:\Users\YourUsername\Desktop
    ```
 4. Run the script:
    ```
-   select_wifi_passwd_optimized.bat
+   wifi_password_tool_auto.bat
+   ```
+   Or force a specific language:
+   ```
+   wifi_password_tool_auto.bat en
+   wifi_password_tool_auto.bat zh
    ```
 
 ## Operation Steps
 
 ### Step 1: Launch the Tool
-After running the script as administrator, the tool will display:
-- All saved WiFi configurations in the current system (with index numbers)
-- Input prompt: `Enter index/WiFi name to query (e=export all, q=exit): `
+After running as administrator, the tool displays:
+- All saved WiFi configurations (with index numbers, compact format)
+- Quick key hint bar: `[e]export  [h]history  [q]quit  [index/name]query`
+- Input prompt: `Enter index/WiFi name to query (e=export, q=exit):`
 
 WiFi list display example:
 ```
-User profiles
--------------
-    1. All User Profile     : CMCC-NPxe-5G
-    2. All User Profile     : HomeinnSelected
-    3. All User Profile     : Redmi 8A
-    4. All User Profile     : JinJiangRewards
+  [User profiles]
+  ---------------------------------
+    01. CMCC-NPxe-5G
+    02. HomeinnSelected
+    03. Redmi 8A
+    04. JinJiangRewards
    ...
-   18. All User Profile     : TPGuest_3006
+    18. TPGuest_3006
 ```
 
 ### Step 2: Select WiFi
-There are two ways to select the WiFi to query:
+Three ways to select:
 
 **Method 1: Enter index (Recommended)**
-- Find the WiFi you want to query in the list
-- Simply enter its corresponding index number, e.g., enter `3` to select the 3rd WiFi
+- Enter the corresponding index number, e.g., `3` for the 3rd WiFi
 
 **Method 2: Enter WiFi name**
-- Enter the complete WiFi name (case-sensitive)
+- Enter the full WiFi name (case-sensitive)
 
-Other operations:
-- Enter `e` to one-click batch export all WiFi passwords to TXT file
-- Enter `q` to exit the program
-- Pressing Enter directly will prompt "No WiFi name entered"
+**Method 3: Quick keys**
+- `e` = Batch export WiFi passwords
+- `h` = View query history
+- `q` = Quit program
 
-### Step 3: View Results
-The tool will display:
+### Step 3: View Result
+The tool displays:
 ```
-============================================
-WiFi Name: [Your selected WiFi name]
-WiFi Password: [Actual password]
-============================================
-[Password copied to clipboard]
+────────────────────────────────────────────
+  WiFi Name: [selected WiFi name] (yellow)
+  WiFi Password: [actual password] (bright white)
+────────────────────────────────────────────
+
+  [OK] [Password copied to clipboard]
 ```
 
-### Step 3B: Batch Export All WiFi Passwords (Optional)
-Enter `e` at the main prompt, or select menu option `2` after a query:
-
+### Step 4: Main Menu
+After query, the main menu offers 6 options:
 ```
-============================================
-    Batch Export WiFi Passwords (TXT)
-============================================
-
-Output file: D:\xxx\WiFi_Passwords_Export_2026-09-06_09-45-12.txt
-Processing 18 WiFi profiles...
-
-[1/18] CMCC-NPxe-5G  ->  P@ssw0rd123
-[2/18] HomeinnSelected  ->  Home@2024
-...
-============================================
-Export complete!
-  File location: D:\xxx\WiFi_Passwords_Export_2026-09-06_09-45-12.txt
-  Success      : 17
-  No password  : 1
-============================================
+  1) Query another WiFi
+  2) Export current WiFi password
+  3) Copy WiFi connect string (phone scan)
+  4) Show/Hide password (R)
+  5) View query history (H)
+  6) Exit program
 ```
+
+- Option 4 toggles password display (hidden shows `********`)
+- Option 5 shows recent 10 query records, enter index to quick re-query
+
+### Step 5: Batch Export (Optional)
+Enter `e` at the main interface to start batch export:
+
+1. **Select export scope**:
+   - `1` Export all WiFi profiles
+   - `2` Export selected WiFi profiles by index (comma separated, e.g., `1,3,5`)
+   - `0` Cancel
+
+2. **Select export format**:
+   - `1` Export as TXT text file
+   - `2` Export as CSV file (with UTF-8 BOM, Excel compatible)
+   - `0` Cancel
+
+3. **Export process**: Real-time progress bar
+   ```
+   [██████░░░░] 60% HomeinnSelected  ->  Home@2024
+   ```
+
+4. **Export complete**: Shows file location and statistics
 
 **TXT file content example**:
 ```
-============================================================
-             WiFi Password Batch Export Report
-============================================================
+────────────────────────────────────────────
+               WiFi Password Batch Export Report
+────────────────────────────────────────────
 
-Export Time: 2026/09/06  9:45:12
-Tool Version: WiFi Password Query Tool v2.1
+Export Time: 2026/09/17  10:30:00
+Tool Version: WiFi Password Query Tool v3.0
 Total WiFi Count: 18
 
-============================================================
+────────────────────────────────────────────
 No.   WiFi Name                             WiFi Password
-============================================================
+────────────────────────────────────────────
  1.  CMCC-NPxe-5G                          P@ssw0rd123
  2.  HomeinnSelected                        Home@2024
- 3.  Redmi 8A                               abc123456
-...
-============================================================
+ ...
+────────────────────────────────────────────
 Export Stats: Success 17 / No Password 1 / Total 18
-============================================================
+────────────────────────────────────────────
 ```
 
-### Step 4: Follow-up Actions
-After query completion, you can choose:
-- Enter `1` to continue querying other WiFi networks
-- Enter `2` to export all WiFi passwords to TXT
-- Enter `3` to exit the program
+**CSV file content example**:
+```
+No.,WiFi Name,WiFi Password
+1,CMCC-NPxe-5G,P@ssw0rd123
+2,HomeinnSelected,Home@2024
+...
+```
 
-## Frequently Asked Questions
+## FAQ
 
-### Q1: Why do I need administrator privileges?
-A: WiFi password information is stored in the system's secure area, and only administrator privileges can access this information.
+### Q1: Why are administrator privileges required?
+A: WiFi password information is stored in a secure system area that requires administrator access.
 
-### Q2: What should I do if it says "WiFi profile not found"?
+### Q2: What if it shows "[ERROR] WiFi profile not found!"?
 A: Please check:
-- If using index selection, ensure the index is within the valid range
-- If entering WiFi name, verify it is correct (case-sensitive)
-- Whether the WiFi has been connected before and the password was saved
-- Whether it appears in the WiFi configuration list
+- If using index, ensure it's within valid range
+- If entering WiFi name, verify correctness (case-sensitive)
+- Whether the WiFi was previously connected and saved
 
-### Q3: What should I do if the password shows as empty?
+### Q3: What if the password is empty?
 A: Possible reasons:
 - The WiFi has no saved password (e.g., open network)
-- The password has expired or been cleared by the system
-- Network configuration is abnormal
+- Password has expired or was cleared by system
+- Network configuration issue
 
-### Q4: Which WiFi encryption methods does the tool support?
-A: Supports all encryption methods supported by Windows systems:
-- WEP
-- WPA-PSK
-- WPA2-PSK
-- WPA3-PSK
+### Q4: What if ANSI colors don't show or characters are garbled?
+A:
+- Ensure you're using Windows 10+ terminal
+- Ensure terminal supports VT (Virtual Terminal) processing
+- Ensure terminal uses UTF-8 encoding (script auto-runs `chcp 65001`)
 
-### Q5: Is it safe? Will it leak passwords?
-A: The tool is secure:
-- Only runs locally, does not upload any information
-- Password is displayed on screen only once
-- Automatically copied to clipboard for convenience
-- Exported TXT files are stored in the script directory, keep them safe
+### Q5: Where are exported files saved?
+A: Export files are saved in the script's directory:
+- TXT: `WiFi_Passwords_Export_YYYY-MM-DD_HH-MM-SS.txt`
+- CSV: `WiFi_Passwords_Export_YYYY-MM-DD_HH-MM-SS.csv`
 
-### Q6: Where are exported TXT files saved?
-A: Export files are saved in the script directory, filename format:
-`WiFi_Passwords_Export_YYYY-MM-DD_HH-MM-SS.txt`
-Example: `WiFi_Passwords_Export_2026-09-06_09-45-12.txt`
+### Q6: How to use on non-English/non-Chinese systems?
+A: The script auto-detects system language. You can also force it: `wifi_password_tool_auto.bat en` (English), `wifi_password_tool_auto.bat zh` (Chinese), etc.
 
 ## Error Messages
 
 | Error Message | Cause | Solution |
 |---------------|-------|----------|
-| Please run this script as Administrator! | Insufficient privileges | Right-click and select "Run as administrator" |
-| Error: No WiFi name entered! | Empty input | Enter a valid index/WiFi name, or q to exit, or e to export |
-| Error: WiFi profile "xxx" not found! | Incorrect/non-existent WiFi name or invalid index | Check if the index is in range, or if the WiFi name is correct |
-| Error: Unable to retrieve password information | Password retrieval failed | The WiFi may not have a saved password |
-| Error: No WiFi configurations available to export! | No WiFi profiles in system | Connect and save at least one WiFi first |
+| [ERROR] Please run this script as Administrator! | Insufficient privileges | Right-click and select "Run as administrator" |
+| [ERROR] No WiFi name entered! | Empty input | Enter valid index/WiFi name, or q to quit, or e to export |
+| [ERROR] WiFi profile not found! | Invalid name/index | Check if index is in range, or WiFi name is correct |
+| [ERROR] Unable to retrieve password information | Password retrieval failed | WiFi may not have a saved password |
+| [ERROR] No WiFi configurations available to export! | No WiFi configs in system | Connect and save at least one WiFi |
+| [ERROR] No valid index selected! | Invalid export index | Enter valid indices (comma separated, e.g., 1,3,5) |
 
 ## Technical Support
 
-If you encounter problems during use:
+If you encounter issues:
 
 1. Ensure running as administrator
-2. Check if the WiFi name is correct
-3. Confirm that the WiFi has been connected before and the password was saved
-4. Try using the English version of the script
+2. Check WiFi name correctness
+3. Confirm the WiFi was previously connected with saved password
+4. Try forcing a language: `wifi_password_tool_auto.bat en`
 
 ## Version Information
 
-- Version: v2.1
-- Update Date: September 2026
-- Compatibility: Windows 7/8/10/11
-- Language Support: Chinese/English
-- Update Content:
-  - v2.1: Added batch export of all WiFi passwords to TXT file (timestamp-named, with stats report); added export option to main menu; main prompt supports `e` for one-click export
-  - v2.0: Added index numbers to WiFi list, supported quick selection by index; compatible with both Chinese and English system output formats
+- Version: v3.0
+- Updated: September 2026
+- Compatibility: Windows 7/8/10/11 (Windows 10+ recommended)
+- Language Support: Chinese/English UI, 18-language netsh parsing
+- License: MIT License
+- Changelog:
+  - v3.0: Unified multi-language auto-detect version; dynamic 18-language netsh keyword matching; CSV export + WiFi connect string copy; export scope/format selection; UI optimization A+B+C (password toggle, progress bar, quick keys, history, ANSI colors, Unicode separators)
+  - v2.1: Added batch export to TXT; added export option in main menu
+  - v2.0: Added index display in WiFi list; compatible with Chinese/English system output formats
 
 ## Disclaimer
 
-This tool is for personal learning and legal use only. Users should ensure:
+This tool is for personal learning and legal use only. Users must ensure:
 - Only query passwords for WiFi networks they own
-- Not use for illegally obtaining others' network passwords
+- Do not use for illegally obtaining others' network passwords
 - Comply with local laws and regulations
 
 ---
 
-**Note: Please keep your WiFi passwords safe and do not use this tool in insecure environments.**
+**Note: Please keep your WiFi passwords safe and do not use this tool in unsafe environments.**
