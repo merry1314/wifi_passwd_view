@@ -1,0 +1,25 @@
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CodeArts Doer (agent config, cache, memory)
+.codeartsdoer/
+
+# Exported WiFi password files (do not commit sensitive data)
+WiFi密码导出_*.txt
+WiFi密码导出_*.csv
+WiFi_Passwords_Export_*.txt
+WiFi_Passwords_Export_*.csv
+
+# Windows junk
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# OS / shell temp files
+*.tmp
+*.temp
+*.log
