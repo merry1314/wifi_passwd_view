@@ -40,10 +40,8 @@ The WiFi Password Query Tool is a Windows batch-based utility that helps users q
 
 ### 1. Download Files
 
-Download the following files to your desktop:
-- `wifi_password_tool_auto.bat` (**Recommended**, unified version, auto-detects language)
-- `wifi_password_tool.bat` (Chinese version, kept for compatibility)
-- `select_wifi_passwd_optimized.bat` (English version, kept for compatibility)
+Download the following file to your desktop:
+- `wifi_password_tool_auto.bat` (v3.0 unified version, auto-detects language)
 
 ### 2. Run the Tool
 

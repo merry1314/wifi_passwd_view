@@ -41,9 +41,7 @@ WiFi密码查询工具是一个基于Windows批处理的实用程序，可以帮
 ### 1. 下载文件
 
 下载以下文件到您的桌面：
-- `wifi_password_tool_auto.bat`（**推荐**，统一版，自动识别语言）
-- `wifi_password_tool.bat`（中文版，保留兼容）
-- `select_wifi_passwd_optimized.bat`（英文版，保留兼容）
+- `wifi_password_tool_auto.bat`（v3.0 统一版，自动识别语言）
 
 ### 2. 运行工具
 

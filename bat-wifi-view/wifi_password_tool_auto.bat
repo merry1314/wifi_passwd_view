@@ -148,8 +148,9 @@ if "!wifi_name!"==" " (
 
 REM Check if WiFi profile exists
 :do_query
-netsh wlan show profile name="%wifi_name%" >nul 2>&1
-if %errorLevel% neq 0 (
+netsh wlan show profile name="!wifi_name!" >nul 2>&1
+set "netsh_err=!errorlevel!"
+if !netsh_err! neq 0 (
     echo.
     echo !str_err_not_found!
     set "wifi_name="
@@ -168,7 +169,7 @@ echo.
 REM --- Extract password using dynamic keyword matching ---
 REM Multi-language keyword match + generic fallback (key + content)
 set "password="
-for /f "usebackq tokens=*" %%i in (`netsh wlan show profile name^="%wifi_name%" key^=clear`) do (
+for /f "usebackq tokens=*" %%i in (`netsh wlan show profile name^="!wifi_name!" key^=clear 2^>nul`) do (
     set "line=%%i"
     set "is_key="
     if not "!line:Key Content=!"=="!line!" set "is_key=1"
@@ -207,6 +208,7 @@ for /f "usebackq tokens=*" %%i in (`netsh wlan show profile name^="%wifi_name%" 
         )
     )
 )
+
 
 REM If still no password found
 echo !str_err_no_password!
@@ -444,10 +446,19 @@ set "export_format=csv"
 goto do_export_proceed
 
 :do_export_proceed
-REM Generate timestamped filename
-set "datestamp=%date:~0,4%-%date:~5,2%-%date:~8,2%"
-set "timestamp=%time:~0,2%-%time:~3,2%-%time:~6,2%"
-set "timestamp=!timestamp: =0!"
+REM Generate timestamped filename using wmic (locale-independent)
+REM wmc returns YYYYMMDDHHMMSS.mmmmmm+TZ, avoids %date%/%time% locale issues
+set "dt="
+for /f "tokens=2 delims==." %%a in ('wmic os get LocalDateTime /value 2^>nul ^| findstr "LocalDateTime"') do set "dt=%%a"
+if not "!dt!"=="" (
+    set "datestamp=!dt:~0,4!-!dt:~4,2!-!dt:~6,2!"
+    set "timestamp=!dt:~8,2!-!dt:~10,2!-!dt:~12,2!"
+) else (
+    REM Fallback to %date%/%time% if wmic unavailable
+    set "datestamp=%date:~0,4%-%date:~5,2%-%date:~8,2%"
+    set "timestamp=%time:~0,2%-%time:~3,2%-%time:~6,2%"
+    set "timestamp=!timestamp: =0!"
+)
 
 REM Count total profiles to export for progress display
 set "export_total=0"
@@ -530,14 +541,17 @@ for /l %%n in (1,1,!wifi_count!) do (
         call :build_progress_bar !export_processed! !export_total!
 
         if "!export_format!"=="csv" (
-            REM CSV output: index,name,password
+            REM CSV output: index,name,password (with RFC 4180 escaping)
+            call :csv_escape "!cur_name!"
+            set "csv_name=!csv_field!"
             if "!cur_pwd!"=="" (
                 set /a exported_none+=1
-                echo %%n,!cur_name!,>> "!outfile!"
+                echo %%n,!csv_name!,>> "!outfile!"
                 echo !progress_bar! !cur_name!  -^>  ^<!str_no_password!^>
             ) else (
+                call :csv_escape "!cur_pwd!"
                 set /a exported_ok+=1
-                echo %%n,!cur_name!,!cur_pwd!>> "!outfile!"
+                echo %%n,!csv_name!,!csv_field!>> "!outfile!"
                 echo !progress_bar! !cur_name!  -^>  !cur_pwd!
             )
         ) else (
@@ -561,6 +575,7 @@ for /l %%n in (1,1,!wifi_count!) do (
         )
     )
 )
+
 
 REM TXT footer with stats (CSV keeps plain columns)
 if not "!export_format!"=="csv" (
@@ -872,7 +887,7 @@ if "!is_profile_type!"=="1" (
     for /f "tokens=* delims= " %%x in ("!pname!") do set "pname=%%x"
     if not "!pname!"=="" (
         set /a wifi_count+=1
-        set "wifi_name_!wifi_count!=!pname!"
+        call :safe_set_wifi "!wifi_count!" "!pname!"
     )
     goto :eof
 )
@@ -890,16 +905,41 @@ if not "!extracted_name!"=="" (
 
     if "!p1_is_num!"=="0" (
         set /a wifi_count+=1
-        set "wifi_name_!wifi_count!=!extracted_name!"
+        call :safe_set_wifi "!wifi_count!" "!extracted_name!"
     ) else if "!p2_has_colon!"=="1" (
         set /a wifi_count+=1
-        set "wifi_name_!wifi_count!=!extracted_name!"
+        call :safe_set_wifi "!wifi_count!" "!extracted_name!"
     )
 )
 goto :eof
 
 REM ============================================================
-REM Subroutine: Parse comma-separated index list
+REM Subroutine: Safely set wifi_name_N variable
+REM Args: %1 = index, %2 = WiFi name
+REM ============================================================
+:safe_set_wifi
+set "wifi_name_%~1=%~2"
+goto :eof
+
+REM ============================================================
+REM Subroutine: CSV field escape (RFC 4180)
+REM Args: %1 = field value
+REM Output: csv_field variable with proper CSV escaping
+REM Rules: fields with comma or quote are wrapped in quotes,
+REM        quotes inside are doubled ("" -> """")
+REM ============================================================
+:csv_escape
+set "csv_field=%~1"
+set "csv_need_escape=0"
+if not "!csv_field:,=!"=="!csv_field!" set "csv_need_escape=1"
+if not "!csv_field:"=!"=="!csv_field!" set "csv_need_escape=1"
+if "!csv_need_escape!"=="1" (
+    REM Double all double quotes: " -> ""
+    set "csv_field=!csv_field:"=""!"
+    REM Wrap field in double quotes
+    for /f "delims=" %%q in ('echo "!csv_field!"') do set "csv_field=%%q"
+)
+goto :eof
 REM Marks sel_<n>=1 for each valid index, sets export_selected=1 if any
 REM Args: %1 = list like "1,3,5"
 REM ============================================================
