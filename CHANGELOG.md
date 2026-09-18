@@ -5,20 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-项目地址：`e:\补丁更新工具\wifi_passwd_view\`，含 BAT 和 Go 双实现。
+项目地址：`e:\补丁更新工具\wifi_passwd_view\`，含 BAT、Go、Rust 三实现。
 
 ---
 
 ## [Unreleased]
 
 ### Added
+- **Rust 版实现**（`rust-wifi-view/`）— 与 BAT / Go 功能完全对齐的第三种实现
+  - 单文件 `src/main.rs`（~2000 行），仅 1 个外部 crate（`qrcode` 0.13）
+  - release 产物 **307 KB**（`opt-level="z"` + `lto` + `strip` + `panic="abort"`，无需 UPX）
+  - QR 码输出 **SVG 矢量**（vs Go 版 PNG），文件仅 2–5 KB，浏览器直接打开
+  - 64 个单元测试（`cargo test`），覆盖密码提取、netsh 解析、注入防护、QR 生成、强度评分、导出等
+  - `-h` / `-v` 命令行开关（BAT / Go 均无）
+  - CRT 启动 TLS shim：手工补齐 `_tls_used` / `_tls_index` / `.CRT$XLA` / `.CRT$XLZ`，解决 rust-lld 链接 MSVC 目标无 CRT 启动代码的 `0xc0000005` 崩溃
+  - `gen_libs.py`：从系统 DLL 导出表一次性生成导入库（`winlibs/`），无需 Windows SDK / MSVC Build Tools
+  - `.cargo/config.toml`：指定 `lld-link` 链接器 + `/alternatename` 映射 `mainCRTStartup`→`main`、`type_info::vftable`→占位符
+  - 详见 [`rust-wifi-view/README.md`](rust-wifi-view/README.md)
 - Go 版非 VT 终端降级：`enableVT()` 检查 `SetConsoleMode` 返回值，失败时调 `disableColors()` 把所有 ANSI 颜色常量置空（避免 Win7 旧 conhost / 重定向 stdout 输出原始 `[36m` 乱码）
 - Go 版 `uniqueFilename()`：导出文件 / QR 文件名冲突时自动追加 `_(2)`, `_(3)`...，避免同秒内重复导出被静默覆盖
 - Go 版空 WiFi 列表早退：检测到 0 个配置时打印本地化提示并优雅退出，避免强制用户对着空列表输入
 - Go 版 `TestUniqueFilename` 单元测试（5 子用例，含间隔跳号测试）
 - Go 版 `TestEscapeForShellArg` 单元测试（10 子用例，防 SSID cmd.exe 注入）
 - Go 版二进制 UPX 压缩步骤文档（`go-wifi-view/README.md` 进一步压缩体积章节），可叠加 `-s -w` 把 ~3 MB 压到 ~1.5 MB
-- 顶层 README.md 双实现体积对照表更新：`~6 MB` → `~3 MB (-s -w)` / `~1.5 MB (+ UPX)`
+- 顶层 README.md 三实现体积对照表：BAT ~36 KB / Go ~3 MB（UPX ~1.5 MB）/ Rust ~307 KB
+
+### Changed
+- 顶层 README.md 从"两种实现"改为"三种实现"，新增 Rust 版快速开始、对照表、项目结构
+- `.gitignore` 新增 Rust 忽略规则：`rust-wifi-view/target/`、`lld-link.exe`、`winlibs/*.lib`、`winlibs/*.def` 等
 
 ### Fixed
 - Go 版 `pwdKeywords` 数组补 `Nøkkelinnhold`（挪威语），同时 BAT 两处关键词检测块同步
@@ -117,13 +131,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 版本对照 / Version Compatibility
 
-| 版本 | BAT | Go | 备注 |
-|------|-----|----|----|
-| v3.1 | ✅ | ✅ | 功能完全对齐 |
-| v3.0 | ✅ | ❌ | 仅 BAT 版 |
-| v2.1 | ✅ | ❌ | 仅 BAT 版 |
-| v2.0 | ✅ | ❌ | 仅 BAT 版 |
-| v1.x | ✅ | ❌ | 已废弃，仅 BAT |
+| 版本 | BAT | Go | Rust | 备注 |
+|------|-----|----|------|------|
+| v3.1 | ✅ | ✅ | ✅ | 功能完全对齐 |
+| v3.0 | ✅ | ❌ | ❌ | 仅 BAT 版 |
+| v2.1 | ✅ | ❌ | ❌ | 仅 BAT 版 |
+| v2.0 | ✅ | ❌ | ❌ | 仅 BAT 版 |
+| v1.x | ✅ | ❌ | ❌ | 已废弃，仅 BAT |
 
 ---
 
@@ -132,5 +146,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📖 [README.md](README.md) — 项目总览
 - 📖 [bat-wifi-view/Language_Support.md](bat-wifi-view/Language_Support.md) — BAT 版 21 语言总览
 - 📖 [go-wifi-view/Language_Support.md](go-wifi-view/Language_Support.md) — Go 版 21 语言总览
+- 📖 [rust-wifi-view/README.md](rust-wifi-view/README.md) — Rust 版使用说明
 </content>
 </invoke>

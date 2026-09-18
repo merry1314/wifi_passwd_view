@@ -23,3 +23,17 @@ $RECYCLE.BIN/
 *.tmp
 *.temp
 *.log
+# Rust / Cargo
+rust-wifi-view/target/
+rust-wifi-view/.workbuddy/
+rust-wifi-view/lld-link.exe
+rust-wifi-view/winlibs/*.lib
+rust-wifi-view/winlibs/*.def
+rust-wifi-view/winlibs/*.exp
+
+# Go
+go-wifi-view/wifi_password_tool.exe
+
+# QR code images (generated at runtime)
+WiFi_QR_*.png
+WiFi_QR_*.svg

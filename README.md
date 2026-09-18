@@ -1,25 +1,26 @@
 # WiFi 密码查询工具 / WiFi Password Query Tool
 
-一个用于查看 Windows 已保存 WiFi 密码的实用工具。提供 **两种实现**，功能一致，按需选用。
+一个用于查看 Windows 已保存 WiFi 密码的实用工具。提供 **三种实现**，功能一致，按需选用。
 
-A Windows utility for viewing saved WiFi passwords. Ships in **two implementations** with identical features — pick the one that fits your workflow.
+A Windows utility for viewing saved WiFi passwords. Ships in **three implementations** with identical features — pick the one that fits your workflow.
 
-## 两种实现 / Two Implementations
+## 三种实现 / Three Implementations
 
-| | BAT 版 / BAT edition | Go 版 / Go edition |
-|---|---|---|
-| 目录 / Folder | [`bat-wifi-view/`](bat-wifi-view/) | [`go-wifi-view/`](go-wifi-view/) |
-| 入口文件 / Entry | `wifi_password_tool_auto.bat` | `wifi_password_tool.exe` (编译后) |
-| 运行依赖 / Runtime deps | Windows 自带 / Windows built-in | 无（单 exe）/ none (single exe) |
-| 分发 / Distribution | 拷 `.bat` 即可 / copy `.bat` | 拷 `wifi_password_tool.exe` / copy the exe |
-| 编译需要 / Build needs | 无 / none | Go 1.21+ |
-| 文件大小 / Size | ~36 KB | ~3 MB（`-s -w`）/ ~1.5 MB（+ UPX） |
-| 二维码图片 / QR image | ❌ | ✅ 带 SSID 标注 / with SSID label |
-| 文档 / Docs | 见子目录 / see subfolder | [go-wifi-view/README.md](go-wifi-view/README.md) |
+| | BAT 版 / BAT edition | Go 版 / Go edition | Rust 版 / Rust edition |
+|---|---|---|---|
+| 目录 / Folder | [`bat-wifi-view/`](bat-wifi-view/) | [`go-wifi-view/`](go-wifi-view/) | [`rust-wifi-view/`](rust-wifi-view/) |
+| 入口文件 / Entry | `wifi_password_tool_auto.bat` | `wifi_password_tool.exe` (编译后) | `wifi_password_tool.exe` (编译后) |
+| 运行依赖 / Runtime deps | Windows 自带 / Windows built-in | 无（单 exe）/ none (single exe) | 无（单 exe）/ none (single exe) |
+| 分发 / Distribution | 拷 `.bat` 即可 / copy `.bat` | 拷 `wifi_password_tool.exe` / copy the exe | 拷 `wifi_password_tool.exe` / copy the exe |
+| 编译需要 / Build needs | 无 / none | Go 1.21+ | Rust stable + Python 3（首次） |
+| 文件大小 / Size | ~36 KB | ~3 MB（`-s -w`）/ ~1.5 MB（+ UPX） | **~307 KB**（无 UPX） |
+| 二维码图片 / QR image | ❌ | ✅ PNG / PNG | ✅ SVG（矢量）/ SVG (vector) |
+| `-h` / `-v` 开关 / CLI flags | ❌ | ❌ | ✅ |
+| 文档 / Docs | 见子目录 / see subfolder | [go-wifi-view/README.md](go-wifi-view/README.md) | [rust-wifi-view/README.md](rust-wifi-view/README.md) |
 
-两者菜单、快捷键、提示、ANSI 颜色完全一致，互不冲突。
+三者菜单、快捷键、提示、ANSI 颜色完全一致，互不冲突。
 
-Both share the same menus, shortcuts, prompts and ANSI colors — switch freely between them.
+All three share the same menus, shortcuts, prompts and ANSI colors — switch freely between them.
 
 ## 快速开始 / Quick Start
 
@@ -29,7 +30,7 @@ Both share the same menus, shortcuts, prompts and ANSI colors — switch freely 
 2. 右键 `wifi_password_tool_auto.bat` → **以管理员身份运行** / Right-click → **Run as administrator**
 3. 详细说明见 [`WiFi密码查询工具使用说明.md`](bat-wifi-view/WiFi密码查询工具使用说明.md) 或英文版 [`WiFi_Password_Query_Tool_Manual.md`](bat-wifi-view/WiFi_Password_Query_Tool_Manual.md)
 
-### Go 版 / Go edition（单文件分发 / single-file distribution）
+### Go 版 / Go edition
 
 ```powershell
 cd go-wifi-view
@@ -39,6 +40,18 @@ go build -o wifi_password_tool.exe
 ```
 
 完整文档：[go-wifi-view/README.md](go-wifi-view/README.md)
+
+### Rust 版 / Rust edition（最小体积 / smallest binary）
+
+```powershell
+cd rust-wifi-view
+python gen_libs.py          # 首次运行：生成导入库 / first time only: generate import libs
+cargo build --release
+# 产物 / output: target/release/wifi_password_tool.exe
+# 右键以管理员身份运行 / Run as administrator
+```
+
+完整文档：[rust-wifi-view/README.md](rust-wifi-view/README.md)
 
 ## 通用功能 / Common Features
 
@@ -65,9 +78,10 @@ go build -o wifi_password_tool.exe
 ## 选哪个？/ Which one to choose?
 
 - **临时在别人电脑上跑一下** → BAT 版，零安装 / Temporary use on someone else's PC → BAT, zero install
-- **想塞进 U 盘随身带 / 给同事分发** → Go 版，单 exe 更干净 / Carry on USB / distribute to teammates → Go, single exe is cleaner
-- **想用脚本/自动化调用** → Go 版，可重命名入口参数稳定 / Want scripting/automation → Go, predictable CLI args
+- **想塞进 U 盘随身带 / 给同事分发** → Rust 版，307 KB 最小 / Carry on USB / distribute → Rust, 307 KB is smallest
+- **想用脚本/自动化调用** → Go 版或 Rust 版，可重命名入口参数稳定 / Want scripting/automation → Go or Rust, predictable CLI args
 - **想加自定义功能** → Go 版，单文件易改易编译 / Want custom modifications → Go, easy to edit and rebuild
+- **追求极致体积 / 启动速度** → Rust 版，307 KB，无 runtime / Want smallest size / fastest startup → Rust, 307 KB, no runtime
 
 ## 项目结构 / Project Layout
 
@@ -81,13 +95,21 @@ wifi_passwd_view/
 │   ├── WiFi密码查询工具使用说明.md
 │   ├── WiFi_Password_Query_Tool_Manual.md
 │   └── Language_Support.md                ← 语言支持总览（21 种 UI / netsh）/ Language overview (21 UI / netsh)
-└── go-wifi-view/                          ← Go 实现 / Go edition
-    ├── main.go
-    ├── main_test.go
-    ├── go.mod
-    ├── go.sum
-    ├── README.md                          ← Go 版使用说明 / Go edition docs
-    └── Language_Support.md                ← 语言支持总览（同上）/ Language overview (same)
+├── go-wifi-view/                          ← Go 实现 / Go edition
+│   ├── main.go
+│   ├── main_test.go
+│   ├── go.mod
+│   ├── go.sum
+│   ├── README.md                          ← Go 版使用说明 / Go edition docs
+│   └── Language_Support.md                ← 语言支持总览（同上）/ Language overview (same)
+└── rust-wifi-view/                        ← Rust 实现 / Rust edition
+    ├── Cargo.toml                         ← 项目配置 + release profile
+    ├── .cargo/
+    │   └── config.toml                   ← lld-link 链接器配置 / linker config
+    ├── gen_libs.py                        ← 从系统 DLL 生成导入库（一次性）/ generate import libs (once)
+    ├── src/
+    │   └── main.rs                        ← 单文件实现（~2000 行）/ single-file impl
+    └── README.md                          ← Rust 版使用说明 / Rust edition docs
 ```
 
 ## 常见问题 / FAQ
@@ -98,7 +120,8 @@ wifi_passwd_view/
 | 找不到 WiFi / WiFi not found | 检查序号范围或名称拼写 / Check index range or spelling |
 | 密码为空 / Empty password | 该 WiFi 可能没保存密码 / WiFi may not have saved password |
 | 颜色不显示 / Colors don't show | 使用 Windows 10+ 终端 / Use Windows 10+ terminal |
-| Go 版 `missing GOSUMDB` | `go env -w GOSUMDB=sum.golang.org` |
+| Go 版 `missing GOSUMDB` | `go env -w GONOSUMDB=off` 或 `GONOSUMDB=sum.golang.org` |
+| Rust 版启动崩溃 `0xc0000005` | 重跑 `python gen_libs.py` 后重新 `cargo build --release` |
 | 中文乱码 / Chinese garbled | 终端设为 UTF-8（`chcp 65001`）/ set terminal to UTF-8 |
 
 ## 开源协议 / License

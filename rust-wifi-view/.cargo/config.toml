@@ -1,0 +1,7 @@
+[target.x86_64-pc-windows-msvc]
+linker = "C:/Users/Administrator/WorkBuddy AI/2026-09-16-17-10-17/rust-wifi-view/lld-link.exe"
+rustflags = [
+    "-C", "link-arg=/libpath:C:/Users/Administrator/WorkBuddy AI/2026-09-16-17-10-17/rust-wifi-view/winlibs",
+    "-C", "link-arg=/alternatename:mainCRTStartup=main",
+    "-C", "link-arg=/alternatename:??_7type_info@@6B@=_type_info_vftable",
+]
