@@ -11,8 +11,11 @@
 # Exported WiFi password files (do not commit sensitive data)
 WiFi密码导出_*.txt
 WiFi密码导出_*.csv
+WiFi_Password_Export_*.txt
+WiFi_Password_Export_*.csv
 WiFi_Passwords_Export_*.txt
 WiFi_Passwords_Export_*.csv
+
 
 # Windows junk
 Thumbs.db

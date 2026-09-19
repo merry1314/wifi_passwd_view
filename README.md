@@ -1,26 +1,25 @@
 # WiFi 密码查询工具 / WiFi Password Query Tool
 
-一个用于查看 Windows 已保存 WiFi 密码的实用工具。提供 **三种实现**，功能一致，按需选用。
+一个用于查看 Windows 已保存 WiFi 密码的实用工具。提供 **四种实现**，功能一致，按需选用。
 
-A Windows utility for viewing saved WiFi passwords. Ships in **three implementations** with identical features — pick the one that fits your workflow.
+A Windows utility for viewing saved WiFi passwords. Ships in **four implementations** with identical features — pick the one that fits your workflow.
 
-## 三种实现 / Three Implementations
+## 四种实现 / Four Implementations
 
-| | BAT 版 / BAT edition | Go 版 / Go edition | Rust 版 / Rust edition |
-|---|---|---|---|
-| 目录 / Folder | [`bat-wifi-view/`](bat-wifi-view/) | [`go-wifi-view/`](go-wifi-view/) | [`rust-wifi-view/`](rust-wifi-view/) |
-| 入口文件 / Entry | `wifi_password_tool_auto.bat` | `wifi_password_tool.exe` (编译后) | `wifi_password_tool.exe` (编译后) |
-| 运行依赖 / Runtime deps | Windows 自带 / Windows built-in | 无（单 exe）/ none (single exe) | 无（单 exe）/ none (single exe) |
-| 分发 / Distribution | 拷 `.bat` 即可 / copy `.bat` | 拷 `wifi_password_tool.exe` / copy the exe | 拷 `wifi_password_tool.exe` / copy the exe |
-| 编译需要 / Build needs | 无 / none | Go 1.21+ | Rust stable + Python 3（首次） |
-| 文件大小 / Size | ~36 KB | ~3 MB（`-s -w`）/ ~1.5 MB（+ UPX） | **~307 KB**（无 UPX） |
-| 二维码图片 / QR image | ❌ | ✅ PNG / PNG | ✅ SVG（矢量）/ SVG (vector) |
-| `-h` / `-v` 开关 / CLI flags | ❌ | ❌ | ✅ |
-| 文档 / Docs | 见子目录 / see subfolder | [go-wifi-view/README.md](go-wifi-view/README.md) | [rust-wifi-view/README.md](rust-wifi-view/README.md) |
+| | BAT 版 / BAT | Go 版 / Go | Rust 版 / Rust | PowerShell 版 / PS |
+|---|---|---|---|---|
+| 目录 / Folder | [`bat-wifi-view/`](bat-wifi-view/) | [`go-wifi-view/`](go-wifi-view/) | [`rust-wifi-view/`](rust-wifi-view/) | [`ps-wifi-view/`](ps-wifi-view/) |
+| 入口文件 / Entry | `wifi_password_tool_auto.bat` | `wifi_password_tool.exe` (编译后) | `wifi_password_tool.exe` (编译后) | `wifi_password_tool.ps1` |
+| 运行依赖 / Runtime deps | Windows 自带 | 无（单 exe） | 无（单 exe） | **PS 5.1+（系统自带）** |
+| 编译 / Build | 不需要 | Go 1.21+ | Rust stable + Python 3（首次） | **不需要** |
+| 文件大小 / Size | ~36 KB | ~3 MB / ~1.5 MB (UPX) | ~307 KB | **~46 KB 文本** |
+| 二维码图片 / QR image | ❌ | ✅ PNG | ✅ SVG | ✅ SVG |
+| `-h` / `-v` 开关 / CLI flags | ❌ | ❌ | ✅ | ✅ |
+| 文档 / Docs | 见子目录 | [go-wifi-view/README.md](go-wifi-view/README.md) | [rust-wifi-view/README.md](rust-wifi-view/README.md) | [ps-wifi-view/README.md](ps-wifi-view/README.md) |
 
-三者菜单、快捷键、提示、ANSI 颜色完全一致，互不冲突。
+四者菜单、快捷键、提示、ANSI 颜色完全一致，互不冲突。
 
-All three share the same menus, shortcuts, prompts and ANSI colors — switch freely between them.
+All four share the same menus, shortcuts, prompts and ANSI colors — switch freely between them.
 
 ## 快速开始 / Quick Start
 
@@ -53,6 +52,16 @@ cargo build --release
 
 完整文档：[rust-wifi-view/README.md](rust-wifi-view/README.md)
 
+### PowerShell 版 / PowerShell edition（零安装零编译 / zero install & build）
+
+```powershell
+cd ps-wifi-view
+powershell -ExecutionPolicy Bypass -File wifi_password_tool.ps1
+# 需管理员身份运行 / Run as administrator
+```
+
+完整文档：[ps-wifi-view/README.md](ps-wifi-view/README.md)
+
 ## 通用功能 / Common Features
 
 - 🔍 查看所有已保存的 WiFi 配置（带序号）/ View all saved WiFi configurations (with index)
@@ -79,6 +88,7 @@ cargo build --release
 
 - **临时在别人电脑上跑一下** → BAT 版，零安装 / Temporary use on someone else's PC → BAT, zero install
 - **想塞进 U 盘随身带 / 给同事分发** → Rust 版，307 KB 最小 / Carry on USB / distribute → Rust, 307 KB is smallest
+- **不想装任何工具链、纯脚本场景** → PowerShell 版，46 KB 文本零编译 / No toolchain, script-only → PowerShell, 46 KB text
 - **想用脚本/自动化调用** → Go 版或 Rust 版，可重命名入口参数稳定 / Want scripting/automation → Go or Rust, predictable CLI args
 - **想加自定义功能** → Go 版，单文件易改易编译 / Want custom modifications → Go, easy to edit and rebuild
 - **追求极致体积 / 启动速度** → Rust 版，307 KB，无 runtime / Want smallest size / fastest startup → Rust, 307 KB, no runtime
@@ -110,6 +120,9 @@ wifi_passwd_view/
     ├── src/
     │   └── main.rs                        ← 单文件实现（~2000 行）/ single-file impl
     └── README.md                          ← Rust 版使用说明 / Rust edition docs
+└── ps-wifi-view/                          ← PowerShell 实现 / PowerShell edition
+    ├── wifi_password_tool.ps1             ← 单文件实现（~1300 行，纯 ASCII）/ single-file impl (pure ASCII)
+    └── README.md                          ← PowerShell 版使用说明 / PS edition docs
 ```
 
 ## 常见问题 / FAQ
@@ -122,6 +135,7 @@ wifi_passwd_view/
 | 颜色不显示 / Colors don't show | 使用 Windows 10+ 终端 / Use Windows 10+ terminal |
 | Go 版 `missing GOSUMDB` | `go env -w GONOSUMDB=off` 或 `GONOSUMDB=sum.golang.org` |
 | Rust 版启动崩溃 `0xc0000005` | 重跑 `python gen_libs.py` 后重新 `cargo build --release` |
+| PS 版无法运行 | `powershell -ExecutionPolicy Bypass -File wifi_password_tool.ps1` |
 | 中文乱码 / Chinese garbled | 终端设为 UTF-8（`chcp 65001`）/ set terminal to UTF-8 |
 
 ## 开源协议 / License

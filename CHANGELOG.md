@@ -5,13 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-项目地址：`e:\补丁更新工具\wifi_passwd_view\`，含 BAT、Go、Rust 三实现。
+项目地址：`e:\补丁更新工具\wifi_passwd_view\`，含 BAT、Go、Rust、PowerShell 四实现。
 
 ---
 
 ## [Unreleased]
 
 ### Added
+- **PowerShell 版实现**（`ps-wifi-view/`）— 与 BAT / Go / Rust 功能完全对齐的第四种实现
+  - 单文件 `wifi_password_tool.ps1`（~1300 行 / ~46 KB），**纯 ASCII 源码**：所有非 ASCII 文案用 `U()` 从 Unicode 码点拼接，摆脱 PS 5.1 无 BOM UTF-8 解析乱码问题
+  - 零编译零工具链：Windows 10/11 自带 PowerShell 5.1 直接运行（`powershell -ExecutionPolicy Bypass -File`）
+  - QR 码：内嵌**自研纯 .NET C# 编码器**（`Add-Type` 运行时编译，用系统自带 csc）——byte 模式、版本 1–10 自适应、R-S 纠错（GF(256)）、数据交织、格式/版本信息 BCH、固定 mask 0，输出 SVG 矢量（同 Rust 版格式）
+  - netsh UTF-8 输出：`cmd /c "chcp 65001 >nul & netsh ..."` + `[Console]::OutputEncoding=UTF8`
+  - SSID cmd.exe 注入防护、文件名净化 + 防覆盖、`-h`/`-v` 开关、Ctrl+C 优雅退出、空列表早退、导出进度条
+  - 详见 [`ps-wifi-view/README.md`](ps-wifi-view/README.md)
 - **Rust 版实现**（`rust-wifi-view/`）— 与 BAT / Go 功能完全对齐的第三种实现
   - 单文件 `src/main.rs`（~2000 行），仅 1 个外部 crate（`qrcode` 0.13）
   - release 产物 **307 KB**（`opt-level="z"` + `lto` + `strip` + `panic="abort"`，无需 UPX）
@@ -28,13 +35,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go 版 `TestUniqueFilename` 单元测试（5 子用例，含间隔跳号测试）
 - Go 版 `TestEscapeForShellArg` 单元测试（10 子用例，防 SSID cmd.exe 注入）
 - Go 版二进制 UPX 压缩步骤文档（`go-wifi-view/README.md` 进一步压缩体积章节），可叠加 `-s -w` 把 ~3 MB 压到 ~1.5 MB
-- 顶层 README.md 三实现体积对照表：BAT ~36 KB / Go ~3 MB（UPX ~1.5 MB）/ Rust ~307 KB
+- 顶层 README.md 四实现体积对照表：BAT ~36 KB / Go ~3 MB（UPX ~1.5 MB）/ Rust ~307 KB / PowerShell ~46 KB 文本
 
 ### Changed
-- 顶层 README.md 从"两种实现"改为"三种实现"，新增 Rust 版快速开始、对照表、项目结构
+- 顶层 README.md 从"两种实现"改为"四种实现"，新增 Rust / PowerShell 版快速开始、对照表、项目结构
 - `.gitignore` 新增 Rust 忽略规则：`rust-wifi-view/target/`、`lld-link.exe`、`winlibs/*.lib`、`winlibs/*.def` 等
 
 ### Fixed
+- **PowerShell 版密码解析修复**（v3.2.1）
+  - 中文关键词 `关键内容` → `密钥内容`（中文 Windows netsh 实际输出的关键词）
+  - 丹麦语/挪威语等关键词构建方式从 `'N' + [char]0xF8 + ...` 改为 `U` 码点拼接：PS 5.1 中 `[string] + [char]` 拼接产生截断，导致关键词变成单字符 `"N"`，使所有含 N 的行（如 `Name`）误匹配
+  - `Extract-Password` 重构：仅匹配冒号**前**的关键词，防止字段值中包含关键词片段时误匹配（如 `Type : Wireless LAN` 被误提取为密码）
+- **PowerShell 版 QR 编译修复**（v3.2.1）
+  - C# 代码 CS0136 编译错误：内层循环变量 `totalData`/`lenBits` 与外层同名冲突（C# 5.0 限制），重命名为 `td`/`lb`
+  - `Ensure-Qr` 增加 `'QrSvg' -as [type]` 预检，避免同一会话重复运行时 `Add-Type` 报类型已存在
+  - 添加 `CSharpCodeProvider` 备用编译路径：`Add-Type` 失败时自动回退到 CodeDom 直接编译
+  - QR 错误显示改为输出 `$script:QrError` 实际错误信息（此前为硬编码通用文本，无法定位根因）
+- **PowerShell 版新增 `-d` 诊断模式**：输出 netsh 原始文本、密码提取结果、QR 编译状态，便于远程排查
 - Go 版 `pwdKeywords` 数组补 `Nøkkelinnhold`（挪威语），同时 BAT 两处关键词检测块同步
 - Go 版 `main_test.go` 的 `TestExtractPassword` 补丹麦语 / 挪威语子用例
 - Go 版多处 `exec.Command(...).Run()` / `.Wait()` 错误被忽略：现对 `chcp 65001` 和 `start ""` 加 stderr 警告，对 `title` 和剪贴板 `Wait` 用 `_ =` 显式丢弃（best-effort）
@@ -131,13 +148,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 版本对照 / Version Compatibility
 
-| 版本 | BAT | Go | Rust | 备注 |
-|------|-----|----|------|------|
-| v3.1 | ✅ | ✅ | ✅ | 功能完全对齐 |
-| v3.0 | ✅ | ❌ | ❌ | 仅 BAT 版 |
-| v2.1 | ✅ | ❌ | ❌ | 仅 BAT 版 |
-| v2.0 | ✅ | ❌ | ❌ | 仅 BAT 版 |
-| v1.x | ✅ | ❌ | ❌ | 已废弃，仅 BAT |
+| 版本 | BAT | Go | Rust | PS | 备注 |
+|------|-----|----|------|-----|------|
+| v3.1 | ✅ | ✅ | ✅ | ✅ | 功能完全对齐 |
+| v3.0 | ✅ | ❌ | ❌ | ❌ | 仅 BAT 版 |
+| v2.1 | ✅ | ❌ | ❌ | ❌ | 仅 BAT 版 |
+| v2.0 | ✅ | ❌ | ❌ | ❌ | 仅 BAT 版 |
+| v1.x | ✅ | ❌ | ❌ | ❌ | 已废弃，仅 BAT |
 
 ---
 
@@ -147,5 +164,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📖 [bat-wifi-view/Language_Support.md](bat-wifi-view/Language_Support.md) — BAT 版 21 语言总览
 - 📖 [go-wifi-view/Language_Support.md](go-wifi-view/Language_Support.md) — Go 版 21 语言总览
 - 📖 [rust-wifi-view/README.md](rust-wifi-view/README.md) — Rust 版使用说明
+- 📖 [ps-wifi-view/README.md](ps-wifi-view/README.md) — PowerShell 版使用说明
 </content>
 </invoke>
